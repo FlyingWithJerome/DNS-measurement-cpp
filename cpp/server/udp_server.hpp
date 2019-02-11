@@ -10,9 +10,10 @@ class UDPServer
     public:
         UDPServer(boost::asio::io_service&);
 
-        static constexpr char udp_log_name_[]      = "udp_normal_response.log";
-        static constexpr char udp_tc_log_name_[]   = "udp_truncated_response.log";
-        static constexpr char udp_edns_log_name_[] = "udp_edns_record.log";
+        static constexpr char udp_log_name_[]        = "udp_normal_response.log";
+        static constexpr char udp_tc_log_name_[]     = "udp_truncated_response.log";
+        static constexpr char udp_edns_log_name_[]   = "udp_edns_record.log";
+        static constexpr char udp_malform_log_name[] = "udp_malform_record.log";
     
     private:
         void start_receive();

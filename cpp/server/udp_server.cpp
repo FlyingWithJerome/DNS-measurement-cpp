@@ -3,6 +3,7 @@
 constexpr char UDPServer::udp_log_name_[];
 constexpr char UDPServer::udp_tc_log_name_[];
 constexpr char UDPServer::udp_edns_log_name_[];
+constexpr char UDPServer::udp_malform_log_name[];
 
 UDPServer::UDPServer(boost::asio::io_service& io_service)
 :main_socket_(
@@ -69,7 +70,15 @@ void UDPServer::reactor_read(const boost::system::error_code& error_code)
 
 void UDPServer::handle_receive(const buffer_type& incoming_packet, std::size_t packet_size, const boost::asio::ip::udp::endpoint& sender)
 {
-    Tins::DNS incoming_query(incoming_packet.get(), packet_size);
+    try
+    {
+        Tins::DNS incoming_query(incoming_packet.get(), packet_size);
+    }
+    catch(Tins::malformed_packet& except)
+    {
+        MALFORM_PACKET_UDP_LOG(udp_malform_log_name, sender)
+        return;
+    }
 
     NameTrick::QueryProperty query_property(incoming_query.queries()[0].dname());
 

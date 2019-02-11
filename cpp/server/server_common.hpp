@@ -14,6 +14,7 @@
 #include <algorithm>
 
 #include <tins/dns.h>
+#include <tins/exceptions.h>
 
 #ifdef FROM_UDP_SERVER
 #define UDP_ANSWERS_
