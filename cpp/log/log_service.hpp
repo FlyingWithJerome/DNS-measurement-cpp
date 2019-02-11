@@ -54,8 +54,7 @@ BOOST_LOG(lg) \
 
 #define MALFORM_PACKET_UDP_LOG(fn, ep) {logger_type lg(boost::log::keywords::channel=fn); \
 BOOST_LOG(lg) \
-<< "Malformed Packet," << ep.address().to_string();
-}
+<< "Malformed Packet," << ep.address().to_string();}
 
 #define EDNS_LOG(fn, qp, ep, edns) {logger_type lg(boost::log::keywords::channel=fn); \
 BOOST_LOG(lg) \

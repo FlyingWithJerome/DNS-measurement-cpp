@@ -70,9 +70,10 @@ void UDPServer::reactor_read(const boost::system::error_code& error_code)
 
 void UDPServer::handle_receive(const buffer_type& incoming_packet, std::size_t packet_size, const boost::asio::ip::udp::endpoint& sender)
 {
+    Tins::DNS incoming_query;
     try
     {
-        Tins::DNS incoming_query(incoming_packet.get(), packet_size);
+        incoming_query = Tins::DNS(incoming_packet.get(), packet_size);
     }
     catch(Tins::malformed_packet& except)
     {
