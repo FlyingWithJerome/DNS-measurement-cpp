@@ -12,12 +12,13 @@ CPP_OPT = -std=c++11 -g
 ALL_OPT = $(CPP_OPT) $(POSIX_FLAG) $(BOOST_FLAG) $(BOOST_LOG) $(TINS_FLAG)
 # PYTHON_DEFAULT = /Library/Frameworks/Python.framework/Versions/3.7/include/python3.7m
 
-TARGET = server_main
+TARGET_SERVER = server_main
+TARGET_SCANNER = scanner_main
 
-$(TARGET): $(TARGET).o log_service.o constants.o name_tricks.o response_maker.o tcp_server.o udp_server.o edns.o
-	g++ *.o $(ALL_OPT) -o $(TARGET) && mv *.o build
+$(TARGET_SERVER): $(TARGET_SERVER).o log_service.o constants.o name_tricks.o response_maker.o tcp_server.o udp_server.o edns.o
+	g++ *.o $(ALL_OPT) -o $(TARGET_SERVER) && mv *.o build
 
-$(TARGET).o : cpp/main.cpp
+$(TARGET_SERVER).o : cpp/main.cpp
 	g++ -c cpp/main.cpp $(ALL_OPT)
 
 tcp_server.o : cpp/server/tcp_server.cpp cpp/server/tcp_connection.cpp 
@@ -40,6 +41,8 @@ response_maker.o : cpp/packet/response_maker.hpp
 
 edns.o : cpp/packet/edns.cpp
 	g++ -c cpp/packet/edns.cpp $(CPP_OPT) $(TINS_FLAG) 
+
+server: $(TARGET) ;
 
 # TARGET = sender
 

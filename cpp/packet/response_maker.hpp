@@ -62,21 +62,5 @@ std::vector<uint8_t>raw_data = response.serialize(); \
 uint8_t res_size[] = {size_of_packet >> 8, size_of_packet & 0xFF}; \
 raw_data.insert(raw_data.begin(), res_size, res_size+2);
 
-
-// namespace ResponseMaker
-// {
-//     int response_maker_udp(
-//         const Tins::DNS& question,
-//         const NameTrick::QueryProperty& query_property,
-//         buffer_type& response_buffer
-//     );
-
-//     int response_maker_tcp(
-//         const Tins::DNS& question,
-//         const NameTrick::QueryProperty& query_property,
-//         buffer_type& response_buffer
-//     );
-// };
-
 #endif
 

@@ -23,6 +23,7 @@ UDPServer::UDPServer(boost::asio::io_service& io_service)
     init_new_log_file(udp_log_name_);
     init_new_log_file(udp_tc_log_name_);
     init_new_log_file(udp_edns_log_name_);
+    init_new_log_file(udp_malform_log_name);
 
     main_socket_.non_blocking(true);
 
