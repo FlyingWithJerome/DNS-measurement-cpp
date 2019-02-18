@@ -6,6 +6,9 @@
 
 #include <boost/asio.hpp>
 #include <boost/bind.hpp>
+#include <boost/scoped_ptr.hpp>
+#include <boost/interprocess/ipc/message_queue.hpp>
+
 
 #include <tins/dns.h>
 
@@ -29,6 +32,14 @@ class UDPListener
 
         boost::asio::ip::udp::socket   main_socket_;
         boost::asio::ip::udp::endpoint remote_endpoint_;
+
+        boost::scoped_ptr<boost::interprocess::message_queue> pipe_to_tcp_;
+
+        typedef struct{
+            char ip_address[17];
+            // char hex_form[12];
+            // unsigned int ip_in_int;
+        }message_pack;
 };
 
 #endif

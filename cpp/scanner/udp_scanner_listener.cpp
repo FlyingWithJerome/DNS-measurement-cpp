@@ -4,14 +4,24 @@ constexpr uint16_t UDPListener::local_port_num;
 constexpr uint16_t UDPListener::remote_port_num;
 
 UDPListener::UDPListener(boost::asio::io_service& io_service)
-:main_socket_(
+: main_socket_(
     io_service,
     boost::asio::ip::udp::endpoint(
-        boost::asio::ip::address::from_string("192.5.110.81"), 
+        boost::asio::ip::address::from_string("0.0.0.0"), 
         2999
     )
 )
 {
+    boost::interprocess::message_queue::remove("pipe_to_tcp");
+    pipe_to_tcp_.reset(
+        new boost::interprocess::message_queue(
+            boost::interprocess::create_only,
+            "pipe_to_tcp",
+            1000,
+            sizeof(message_pack)
+        )
+    );
+
     main_socket_.non_blocking(true);
     this->start_receive();
 }
@@ -76,24 +86,37 @@ void UDPListener::handle_receive(
 
         uint32_t question_id = NameTrick::get_question_id(question_name);
 
-        std::string response_status;
-        response_status = incoming_response.answers()[0].data() == "192.168.0.0" 
-        ? "ok" : "answer_error";
+        // std::string response_status;
+        // response_status = incoming_response.answers()[0].data() == "192.168.0.0" 
+        // ? "ok" : "answer_error";
+
+        // std::cout 
+        // << "[Receiver] receive one from " 
+        // << sender.address() 
+        // << " with "
+        // << response_status
+        // << std::endl;
 
         NameTrick::JumboType jumbo_type_ = NameTrick::get_jumbo_type(question_name);
         
         if(jumbo_type_ == NameTrick::JumboType::no_jumbo) // not a jumbo query, will start a jumbo query
         {
+            if (incoming_response.answers()[0].data() != "192.168.0.0")
+            {
+                // write down the answer error
+                goto End;
+            }
             std::vector<uint8_t> packet;
-
-            std::string hex_address;
+            std::string          hex_address;
 
             INT_TO_HEX(question_id, hex_address)
 
             std::vector<uint8_t> full_packet;
-            std::string question = std::string("jumbo1-") + hex_address + "-email-jxm959-case-edu.yumi.ipl.eecs.case.edu";
+            std::string question = std::string("jumbo1-") 
+            + hex_address 
+            + "-email-jxm959-case-edu.yumi.ipl.eecs.case.edu";
 
-            CRAFT_FULL_QUERY(question, full_packet)
+            CRAFT_FULL_QUERY_UDP(question, full_packet)
 
             main_socket_.async_send_to(
                 boost::asio::buffer(packet),
@@ -112,6 +135,10 @@ void UDPListener::handle_receive(
             if (incoming_response.truncated()) // is a jumbo code and is truncated (as our expectation)
             {
                 // send to tcp scanner
+                message_pack outgoing;
+                strcpy(outgoing.ip_address, sender.address().to_string().c_str());
+
+                pipe_to_tcp_->send(&outgoing, sizeof(outgoing), 1);
             }
             else // is a jumbo query but is not truncated
             {
@@ -124,6 +151,7 @@ void UDPListener::handle_receive(
         // is not even a legal udp packet
     }
 
+    End:
     start_receive();
 }
 

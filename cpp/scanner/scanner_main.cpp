@@ -29,11 +29,11 @@ int main(int argc, char** argv)
 
     std::string file_path = variables_map_["file_path"].as<std::string>();
 
-    boost::asio::io_context io_context;
-    UDPListener listener(io_context);
-    UDPSender   sender(file_path, io_context);
-
-    io_context.run();
+    boost::asio::io_service io_service;
+    UDPListener listener(io_service);
+    UDPSender   sender(file_path, io_service);
+    sender.start_send();
+    io_service.run();
 
     return 0;
 }

@@ -84,12 +84,13 @@ class UDPSender
 {
     public:
         UDPSender(const std::string&, boost::asio::io_service&);
-        
+
+        int start_send();
+
         static constexpr uint16_t local_port_num  = 2999;
         static constexpr uint16_t remote_port_num = 53;
 
     private:
-        int start_send();
         void handle_send(const boost::system::error_code&, std::size_t);
 
         std::ifstream file_input_;
