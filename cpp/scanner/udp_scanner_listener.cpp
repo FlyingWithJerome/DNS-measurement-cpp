@@ -1,5 +1,8 @@
 #include "udp_scanner_listener.hpp"
 
+constexpr uint16_t UDPListener::local_port_num;
+constexpr uint16_t UDPListener::remote_port_num;
+
 UDPListener::UDPListener(boost::asio::io_service& io_service)
 :main_socket_(
     io_service,
@@ -38,52 +41,93 @@ void UDPListener::reactor_read(const boost::system::error_code& error_code)
         
         std::size_t available_packet_size = std::min((int)(main_socket_.available()), 1000);
 
-        std::shared_ptr<uint8_t> new_arrival(new uint8_t[available_packet_size]);
+        std::vector<uint8_t> new_arrival(available_packet_size);
 
         available_packet_size = main_socket_.receive_from(
-            boost::asio::buffer(
-                new_arrival.get(), 
-                available_packet_size
-            ),
+            boost::asio::buffer(new_arrival),
             sender_info
         );
 
-        handle_receive(new_arrival, available_packet_size, sender_info);
+        new_arrival.resize(available_packet_size);
+
+        handle_receive(new_arrival, sender_info);
     }
 }
 
-void UDPServer::handle_receive(
-    const std::shared_ptr<uint8_t>& incoming_packet, 
-    std::size_t packet_size, 
+void UDPListener::handle_receive(
+    const std::vector<uint8_t>& incoming_packet, 
     const boost::asio::ip::udp::endpoint& sender
 )
 {
     Tins::DNS incoming_response;
     try
     {
-        incoming_response = Tins::DNS(incoming_packet.get(), packet_size);
+        incoming_response = Tins::DNS(incoming_packet.data(), incoming_packet.size());
     }
     catch(Tins::malformed_packet& except)
     {
         return;
     }
 
-    if (incoming_response.rcode == 0 and incoming_response.answers_count() > 0)
+    if (incoming_response.rcode() == 0 and incoming_response.answers_count() > 0)
     { // is a legal response
-        uint32_t question_id = NameTrick::get_question_id(incoming_response.answers[0].dname());
+        std::string question_name = incoming_response.answers()[0].dname();
+        std::transform(question_name.begin(), question_name.end(), question_name.begin(), ::tolower);
+
+        uint32_t question_id = NameTrick::get_question_id(question_name);
+
         std::string response_status;
-        response_status = incoming_response.answers[0].data() == "192.168.0.0" 
+        response_status = incoming_response.answers()[0].data() == "192.168.0.0" 
         ? "ok" : "answer_error";
+
+        NameTrick::JumboType jumbo_type_ = NameTrick::get_jumbo_type(question_name);
+        
+        if(jumbo_type_ == NameTrick::JumboType::no_jumbo) // not a jumbo query, will start a jumbo query
+        {
+            std::vector<uint8_t> packet;
+
+            std::string hex_address;
+
+            INT_TO_HEX(question_id, hex_address)
+
+            std::vector<uint8_t> full_packet;
+            std::string question = std::string("jumbo1-") + hex_address + "-email-jxm959-case-edu.yumi.ipl.eecs.case.edu";
+
+            CRAFT_FULL_QUERY(question, full_packet)
+
+            main_socket_.async_send_to(
+                boost::asio::buffer(packet),
+                sender,
+                boost::bind(
+                    &UDPListener::handle_send,
+                    this,
+                    full_packet,
+                    boost::asio::placeholders::error,
+                    boost::asio::placeholders::bytes_transferred
+                )
+            );
+        }
+        else
+        {
+            if (incoming_response.truncated()) // is a jumbo code and is truncated (as our expectation)
+            {
+                // send to tcp scanner
+            }
+            else // is a jumbo query but is not truncated
+            {
+                // write down to [unable process fallback due to truncation]
+            }
+        }
     }
     else
     {
-
+        // is not even a legal udp packet
     }
 
     start_receive();
 }
 
-void UDPServer::handle_send(std::shared_ptr<uint8_t>&, const boost::system::error_code& error_code, std::size_t)
+void UDPListener::handle_send(std::vector<uint8_t>&, const boost::system::error_code& error_code, std::size_t)
 {
     if(error_code)
         std::cout << error_code.message() << std::endl;

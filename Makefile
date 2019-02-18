@@ -3,8 +3,8 @@
 # location of the Boost Python include files and library
 # BOOST_INC = /usr/include
 # BOOST_LIB = /usr/lib
-BOOST_LOG = -DBOOST_LOG_DYN_LINK -lboost_system -lboost_log -lboost_log_setup
-BOOST_FLAG = -lboost_thread 
+BOOST_LOG = -DBOOST_LOG_DYN_LINK -lboost_system -lboost_log -lboost_log_setup -lboost_program_options
+BOOST_FLAG = -lboost_thread-mt
 TINS_FLAG = -ltins
 POSIX_FLAG = -lpthread
 CPP_OPT = -std=c++11 -g
@@ -43,6 +43,18 @@ edns.o : cpp/packet/edns.cpp
 	g++ -c cpp/packet/edns.cpp $(CPP_OPT) $(TINS_FLAG) 
 
 server: $(TARGET) ;
+
+udp_scanner_sender.o : cpp/scanner/udp_scanner_sender.cpp
+	g++ -c cpp/scanner/udp_scanner_sender.cpp $(ALL_OPT)
+
+udp_scanner_listener.o : cpp/scanner/udp_scanner_listener.cpp
+	g++ -c cpp/scanner/udp_scanner_listener.cpp $(ALL_OPT)
+
+scanner_main.o : cpp/scanner/scanner_main.cpp
+	g++ -c cpp/scanner/scanner_main.cpp $(ALL_OPT)
+
+scanner: udp_scanner_sender.o udp_scanner_listener.o scanner_main.o name_tricks.o
+	g++ udp_scanner_sender.o udp_scanner_listener.o scanner_main.o name_trick.o $(ALL_OPT) -o scanner && mv *.o build
 
 # TARGET = sender
 

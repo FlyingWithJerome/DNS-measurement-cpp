@@ -52,13 +52,13 @@ namespace NameTrick
         -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1
     };
 
-    static uint32_t hex_to_int(const std::string &);
+    uint32_t hex_to_int(const std::string &);
     /* check whether the server is authoritative to the question */
-    static bool check_authoritative(const std::string&);
+    bool check_authoritative(const std::string&);
     /* get the question ID from the question */
-    static uint32_t get_question_id(const std::string&);
+    uint32_t get_question_id(const std::string&);
     /* get the jumbo type from the question */
-    static JumboType get_jumbo_type(const std::string&);
+    JumboType get_jumbo_type(const std::string&);
 };
 
 #endif

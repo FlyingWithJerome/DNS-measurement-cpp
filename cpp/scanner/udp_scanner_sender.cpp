@@ -1,10 +1,10 @@
-#include "udp_scanner_sender.cpp"
+#include "udp_scanner_sender.hpp"
 
 constexpr uint16_t UDPSender::local_port_num;
 constexpr uint16_t UDPSender::remote_port_num;
 
-UDPSender::UDPSender(const std::string& input_file, const boost::asio::io_service& io_service)
-:file_input(input_file)
+UDPSender::UDPSender(const std::string& input_file, boost::asio::io_service& io_service)
+:file_input_(input_file)
 ,socket_(io_service)
 {
     socket_.non_blocking(true);
@@ -13,37 +13,25 @@ UDPSender::UDPSender(const std::string& input_file, const boost::asio::io_servic
 
 int UDPSender::start_send()
 {
-    std::string address;
-    while(std::getline(file_input_, address))
+    std::string target;
+    while(std::getline(file_input_, target))
     {
         try
         {
-            unsigned int address = std::stoul(address);
+            unsigned int address = std::stoi(target, nullptr, 10);
             std::string hex_address;
 
             INT_TO_HEX(address, hex_address)
 
-            Tins::DNS query;
-            query.id(1338);
-            query.recursion_desired(1);
+            std::vector<uint8_t> full_packet;
+            std::string question = hex_address + "-email-jxm959-case-edu.yumi.ipl.eecs.case.edu";
 
-            query.add_query(
-                Tins::DNS::query(
-                    hex_address + "-email-jxm959-case-edu.yumi.ipl.eecs.case.edu"
-                    1,
-                    1
-                )
-            );
-
-            std::vector<uint8_t> binary_query = query.serialize();
-            std::vector<uint8_t> full_packet(binary_query.size()+8);
-
-            CRAFT_QUERY_PACKET(full_packet, binary_query)
+            CRAFT_FULL_QUERY(question, full_packet)
 
             struct in_addr ip_address;
             ip_address.s_addr = address;
 
-            boost::asio::ip::raw::endpoint end_point(
+            raw::endpoint end_point(
                 boost::asio::ip::address::from_string(inet_ntoa(ip_address)),
                 UDPSender::remote_port_num
             );
@@ -54,7 +42,7 @@ int UDPSender::start_send()
                 boost::bind(
                     &UDPSender::handle_send,
                     this,
-                    boost::asio::placeholder::error,
+                    boost::asio::placeholders::error,
                     boost::asio::placeholders::bytes_transferred
                 )
             );
@@ -65,6 +53,7 @@ int UDPSender::start_send()
         }
         
     }
+    return 0;
 }
 
 void UDPSender::handle_send(const boost::system::error_code& error_code, std::size_t)
