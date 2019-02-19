@@ -42,17 +42,17 @@ class raw
         {
         }
 
-        int type() const
+        int type() const noexcept
         {
             return SOCK_RAW;
         }
 
-        int protocol() const
+        int protocol() const noexcept
         {
             return protocol_;
         }
 
-        int family() const
+        int family() const noexcept
         {
             return family_;
         }
@@ -60,12 +60,12 @@ class raw
         typedef boost::asio::basic_raw_socket<raw> socket;
         typedef boost::asio::ip::basic_resolver<raw> resolver;
 
-        friend bool operator==(const raw& p1, const raw& p2)
+        friend bool operator==(const raw& p1, const raw& p2) noexcept
         {
             return p1.protocol_ == p2.protocol_ && p1.family_ == p2.family_;
         }
 
-        friend bool operator!=(const raw& p1, const raw& p2)
+        friend bool operator!=(const raw& p1, const raw& p2) noexcept
         {
             return p1.protocol_ != p2.protocol_ || p1.family_ != p2.family_;
         }
@@ -85,7 +85,7 @@ class UDPSender
     public:
         UDPSender(const std::string&, boost::asio::io_service&);
 
-        int start_send();
+        int start_send() noexcept;
 
         static constexpr uint16_t local_port_num  = 2999;
         static constexpr uint16_t remote_port_num = 53;

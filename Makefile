@@ -4,9 +4,9 @@
 # BOOST_INC = /usr/include
 # BOOST_LIB = /usr/lib
 BOOST_LOG = -DBOOST_LOG_DYN_LINK -lboost_system -lboost_log -lboost_log_setup -lboost_program_options
-BOOST_FLAG = -lboost_thread-mt
+BOOST_FLAG = -lboost_thread
 TINS_FLAG = -ltins
-POSIX_FLAG = -lpthread
+POSIX_FLAG = -lpthread -lrt
 CPP_OPT = -std=c++11 -g
 
 ALL_OPT = $(CPP_OPT) $(POSIX_FLAG) $(BOOST_FLAG) $(BOOST_LOG) $(TINS_FLAG)
@@ -50,11 +50,20 @@ udp_scanner_sender.o : cpp/scanner/udp_scanner_sender.cpp
 udp_scanner_listener.o : cpp/scanner/udp_scanner_listener.cpp
 	g++ -c cpp/scanner/udp_scanner_listener.cpp $(ALL_OPT)
 
-scanner_main.o : cpp/scanner/scanner_main.cpp
-	g++ -c cpp/scanner/scanner_main.cpp $(ALL_OPT)
+udp_scanner.o : cpp/scanner/udp_scanner.cpp
+	g++ -c cpp/scanner/udp_scanner.cpp $(ALL_OPT)
 
-scanner: udp_scanner_sender.o udp_scanner_listener.o scanner_main.o name_tricks.o
-	g++ udp_scanner_sender.o udp_scanner_listener.o scanner_main.o name_trick.o $(ALL_OPT) -o scanner && mv *.o build
+tcp_scanner.o : cpp/scanner/tcp_scanner.cpp
+	g++ -c cpp/scanner/tcp_scanner.cpp $(ALL_OPT)
+
+udp_scanner_main: udp_scanner_sender.o udp_scanner_listener.o udp_scanner.o name_tricks.o
+	g++ udp_scanner_sender.o udp_scanner_listener.o udp_scanner.o name_trick.o $(ALL_OPT) -o udp_scanner
+
+tcp_scanner_main: tcp_scanner.o
+	g++ tcp_scanner.o -o tcp_scanner $(ALL_OPT)
+
+scanner: udp_scanner_main tcp_scanner_main
+	mv *.o build
 
 # TARGET = sender
 

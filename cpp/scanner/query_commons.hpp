@@ -37,9 +37,7 @@ query.add_query( \
         Tins::DNS::QueryClass(Tins::DNS::QueryClass::INTERNET) \
     ) \
 ); \
-std::vector<uint8_t> binary_query = query.serialize(); \
-packet.reserve(binary_query.size()); \
-std::copy(packet.begin(), packet.end(), std::back_inserter(binary_query));
+packet = query.serialize();
 
 #define CRAFT_FULL_QUERY_TCP(question, packet) Tins::DNS query; \
 query.id(1338); \

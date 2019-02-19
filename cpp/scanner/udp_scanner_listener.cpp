@@ -104,6 +104,7 @@ void UDPListener::handle_receive(
             if (incoming_response.answers()[0].data() != "192.168.0.0")
             {
                 // write down the answer error
+                std::cout << "is an answer error " << std::endl;
                 goto End;
             }
             std::vector<uint8_t> packet;
@@ -116,10 +117,19 @@ void UDPListener::handle_receive(
             + hex_address 
             + "-email-jxm959-case-edu.yumi.ipl.eecs.case.edu";
 
+            std::cout 
+            << "incoming answer: " 
+            << question_name 
+            << " sending another query on " 
+            << question 
+            << " to "
+            << sender.address().to_string()
+            << std::endl;
+
             CRAFT_FULL_QUERY_UDP(question, full_packet)
 
             main_socket_.async_send_to(
-                boost::asio::buffer(packet),
+                boost::asio::buffer(full_packet),
                 sender,
                 boost::bind(
                     &UDPListener::handle_send,
@@ -135,6 +145,7 @@ void UDPListener::handle_receive(
             if (incoming_response.truncated()) // is a jumbo code and is truncated (as our expectation)
             {
                 // send to tcp scanner
+                std::cout << "sending to tcp: " << sender.address().to_string() << std::endl;
                 message_pack outgoing;
                 strcpy(outgoing.ip_address, sender.address().to_string().c_str());
 
@@ -159,4 +170,9 @@ void UDPListener::handle_send(std::vector<uint8_t>&, const boost::system::error_
 {
     if(error_code)
         std::cout << error_code.message() << std::endl;
+}
+
+UDPListener::~UDPListener()
+{
+    boost::interprocess::message_queue::remove("pipe_to_tcp");
 }

@@ -20,6 +20,8 @@ class UDPListener
 {
     public:
         UDPListener(boost::asio::io_service&);
+        UDPListener(const UDPListener&) = delete;
+        ~UDPListener();
 
         static constexpr uint16_t local_port_num  = 2999;
         static constexpr uint16_t remote_port_num = 53;

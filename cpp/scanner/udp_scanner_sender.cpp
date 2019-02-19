@@ -12,12 +12,11 @@ UDPSender::UDPSender(const std::string& input_file, boost::asio::io_service& io_
 
 }
 
-int UDPSender::start_send()
+int UDPSender::start_send() noexcept
 {
     std::string target;
     while(std::getline(file_input_, target))
     {
-        std::cout << "the line is " << target << std::endl;
         try
         {
             unsigned int address = std::stoul(target, nullptr, 10);
@@ -29,9 +28,6 @@ int UDPSender::start_send()
             std::string question = hex_address + "-email-jxm959-case-edu.yumi.ipl.eecs.case.edu";
 
             CRAFT_FULL_QUERY_RAW(question, full_packet)
-
-            std::cout << "full packet size " << full_packet.size() << std::endl;
-            std::cout << "first byte of the full packet " << (int)(full_packet[0]) << std::endl;
 
             struct in_addr ip_address;
             ip_address.s_addr = __builtin_bswap32(address);
