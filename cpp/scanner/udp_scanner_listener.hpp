@@ -9,7 +9,6 @@
 #include <boost/scoped_ptr.hpp>
 #include <boost/interprocess/ipc/message_queue.hpp>
 
-
 #include <tins/dns.h>
 
 #include "../log/log_service.hpp"
@@ -39,6 +38,7 @@ class UDPListener
 
         typedef struct{
             char ip_address[17];
+            char question[70];
             // char hex_form[12];
             // unsigned int ip_in_int;
         }message_pack;

@@ -52,7 +52,7 @@ query.add_query( \
 std::vector<uint8_t> binary_query = query.serialize(); \
 packet.reserve(binary_query.size()+2); \
 uint8_t header[2] = { \
-    (uint8_t)((payload.size() + 8) >> 8), (uint8_t)((payload.size() + 8) & 0xff) \
+    (uint8_t)((binary_query.size() + 8) >> 8), (uint8_t)((binary_query.size() + 8) & 0xff) \
 }; \
 packet.assign(header, header+2); \
 packet.insert(packet.begin()+2, binary_query.begin(), binary_query.end());

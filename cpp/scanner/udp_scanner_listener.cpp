@@ -86,6 +86,7 @@ void UDPListener::handle_receive(
 
         uint32_t question_id = NameTrick::get_question_id(question_name);
 
+        std::cout << "question name " << question_name << std::endl;
         // std::string response_status;
         // response_status = incoming_response.answers()[0].data() == "192.168.0.0" 
         // ? "ok" : "answer_error";
@@ -147,7 +148,9 @@ void UDPListener::handle_receive(
                 // send to tcp scanner
                 std::cout << "sending to tcp: " << sender.address().to_string() << std::endl;
                 message_pack outgoing;
+                
                 strcpy(outgoing.ip_address, sender.address().to_string().c_str());
+                strcpy(outgoing.question, question_name.c_str());
 
                 pipe_to_tcp_->send(&outgoing, sizeof(outgoing), 1);
             }
