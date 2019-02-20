@@ -4,9 +4,9 @@
 # BOOST_INC = /usr/include
 # BOOST_LIB = /usr/lib
 BOOST_LOG = -DBOOST_LOG_DYN_LINK -lboost_system -lboost_log -lboost_log_setup -lboost_program_options
-BOOST_FLAG = -lboost_thread
+BOOST_FLAG = -lboost_thread-mt
 TINS_FLAG = -ltins
-POSIX_FLAG = -lpthread -lrt
+POSIX_FLAG = -lpthread
 CPP_OPT = -std=c++11 -g
 
 ALL_OPT = $(CPP_OPT) $(POSIX_FLAG) $(BOOST_FLAG) $(BOOST_LOG) $(TINS_FLAG)

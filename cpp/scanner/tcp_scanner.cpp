@@ -57,18 +57,14 @@ void TCPScanner::perform_tcp_query(
     // std::cout << "the ip address is " << ip_address << std::endl;
     // lock_.unlock();
 
-    boost::asio::ip::tcp::endpoint remote_server_(
-        boost::asio::ip::address::from_string(ip_address),
-        53
-    );
-
     TCPClient client(remote_server_);
 
     client.connect();
 
-    if (client.is_connected)
+    if (not client.is_connected)
     {
-        std::cout << "client had been connected" << std::endl;
+        // write down "not connected"
+        return;
     }
     
     std::vector<uint8_t> full_packet;
@@ -90,99 +86,110 @@ void TCPScanner::perform_tcp_query(
 //     );
 // }
 
-TCPScanner::~TCPScanner()
-{
-    for(auto& member : thread_nest_)
-    {
-        member.join();
-    }
-    thread_nest_.clear();
+// TCPScanner::~TCPScanner()
+// {
+//     for(auto& member : thread_nest_)
+//     {
+//         member.join();
+//     }
+//     thread_nest_.clear();
 
-    boost::interprocess::message_queue::remove("pipe_to_tcp");
-}
+//     boost::interprocess::message_queue::remove("pipe_to_tcp");
+// }
+
 
 TCPScanner::TCPClient::TCPClient(
-    boost::asio::ip::tcp::endpoint& remote_addr
+    const char* remote_addr
 )
-: socket_(
-    io_service_
-)
-, remote_endpoint_(
-    remote_addr
-)
-, deadline_(
-    io_service_
+: socket_fd(
+    socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)
 )
 , is_connected(
     false
 )
 {
-    deadline_.expires_at(boost::posix_time::pos_infin);
+    remote_address.sin_family = AF_INET;
+    remote_address.sin_port   = htons((uint16_t)53);
+
+    int status = inet_aton(remote_addr, &remote_address.sin_addr);
+
+    if (status == 0)
+        std::cout << "the address is invalid: " << remote_addr << std::endl;
+
+    fcntl(socket_fd, F_SETFL, O_NONBLOCK);
+
+    FD_ZERO(&socket_set);
+    FD_SET(socket_fd, &socket_set);
 }
 
 int TCPScanner::TCPClient::connect()
 {
-    deadline_.expires_from_now(boost::posix_time::seconds(3));
-
-    boost::system::error_code error = boost::asio::error::would_block;
-
-    socket_.async_connect(
-        remote_endpoint_,
-        boost::lambda::var(error) = boost::lambda::_1
+    int status = ::connect(
+        socket_fd,
+        (struct sockaddr*)&remote_address,
+        sizeof(struct sockaddr)
     );
 
-    do io_service_.run_one(); while (error == boost::asio::error::would_block);
+    int retval = select(socket_fd+1, nullptr, &socket_set, nullptr, &connect_timeout);
+    int state;
+    socklen_t size = sizeof(int);
 
-    if (error || !socket_.is_open())
-        throw boost::system::system_error(
-            error ? error : boost::asio::error::operation_aborted
-        );
+    getsockopt(socket_fd, SOL_SOCKET, SO_ERROR, &state, &size);
 
-    is_connected = true;
+    is_connected = (state == 0 and retval > 0);
 
+    return is_connected;
 }
 
-void TCPScanner::TCPClient::teardown()
+int TCPScanner::TCPClient::send(const std::vector<uint8_t>& packet)
 {
-    socket_.cancel();
-    socket_.close();
+    int status = ::send(
+        socket_fd,
+        packet.data(),
+        packet.size(),
+        0
+    );
+
+    if (status < 0)
+        std::cout << "[Send function]" << strerror(errno) << std::endl;        
+
+    return status;
 }
 
-void TCPScanner::TCPClient::handle_wait(const boost::system::error_code& error)
+int TCPScanner::TCPClient::receive(std::vector<uint8_t>& packet)
 {
-    if (error)
-    {
-        std::cout << "time out" << std::endl;
-        teardown();
-    }
-}
+    uint8_t packet_buffer[3000];
 
-void TCPScanner::TCPClient::handle_connect(const boost::system::error_code& error)
-{
-    if (not error)
-    {
-        std::cout << "successfully connected" << std::endl;
-        deadline_.expires_at(boost::posix_time::pos_infin);
-        is_connected = true;
-    }
-    else
-    {
-        std::cout << "connect error message " << error.message() << std::endl;
-    }
+    int retval = select(socket_fd+1, &socket_set, nullptr, nullptr, &read_timeout);
     
+    if (retval > 0)
+    {
+        int recv_size = ::recv(
+            socket_fd,
+            packet_buffer,
+            3000,
+            0
+        );
+        if (recv_size > 0)
+        {
+            packet.reserve(recv_size);
+            std::copy_n(std::begin(packet_buffer), recv_size, std::back_inserter(packet));
+
+            return recv_size;
+        }
+        else if (recv_size < 0)
+        {
+            std::cout << strerror(errno) << std::endl;
+            return -1;
+        }
+        return 0;
+    }
+    return -1;
 }
 
-void TCPScanner::TCPClient::check_deadline()
+TCPScanner::TCPClient::~TCPClient()
 {
-    if (deadline_.expires_at() <= boost::asio::deadline_timer::traits_type::now())
-    {
-        boost::system::error_code ec;
-        socket_.close(ec);
-
-        deadline_.expires_at(boost::posix_time::pos_infin);
-    }
-
-    deadline_.async_wait(boost::bind(&TCPClient::check_deadline, this));
+    close(socket_fd);
 }
 
 int main()
@@ -191,18 +198,49 @@ int main()
     // scanner.service_loop();
 
     // return 0;
-    boost::asio::ip::tcp::endpoint remote_server_(
-        boost::asio::ip::address::from_string("8.8.3.3"),
-        53
-    );
-    TCPScanner::TCPClient client(remote_server_);
+    // boost::asio::ip::tcp::endpoint remote_server_(
+    //     boost::asio::ip::address::from_string("8.8.4.4"),
+    //     53
+    // );
+    TCPScanner::TCPClient client("8.8.3.3");
 
     client.connect();
 
-    if (client.is_connected)
+    if (not client.is_connected)
     {
-        std::cout << "client had been connected" << std::endl;
+        std::cout << "client had not been connected" << std::endl;
+        return 1;
     }
+
+    std::string question = "nogizaka.yumi.ipl.eecs.case.edu";
+    std::vector<uint8_t> packet;
+
+    CRAFT_FULL_QUERY_TCP(question, packet)
+
+    std::vector<uint8_t> response;
+
+    int send_bytes;
+    int recv_bytes;
+    if ((send_bytes = client.send(packet)) < 0)
+    {
+        std::cout << "send error" << std::endl;
+    }
+    else
+    {
+        std::cout << "send bytes " << send_bytes << std::endl;
+    }
+    
+
+    if ((recv_bytes = client.receive(response)) < 0)
+    {
+        std::cout << "recv error" << std::endl;
+    }
+    else
+    {
+        std::cout << "recv bytes " << recv_bytes << std::endl;
+    }
+
+    std::cout << "has a response of size " << response.size() << std::endl;
 
     return 0;
 }

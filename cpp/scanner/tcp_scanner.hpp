@@ -10,6 +10,10 @@
 #include <thread>
 #include <mutex> 
 
+#include <cstring>
+#include <errno.h>
+#include <fcntl.h>
+
 #include <boost/asio.hpp>
 #include <boost/asio/deadline_timer.hpp>
 #include <boost/asio/steady_timer.hpp>
@@ -55,26 +59,37 @@ class TCPScanner
         {
             public:
                 TCPClient(
-                    boost::asio::ip::tcp::endpoint& remote_addr
+                    const char* remote_addr
                 );
+                TCPClient(const TCPClient&) = delete;
+
+                ~TCPClient();
 
                 int connect();
                 int send(const std::vector<uint8_t>&);
                 int receive(std::vector<uint8_t>&);
 
-                void teardown();
-
                 bool is_connected;
+
             private:
-                void handle_wait(const boost::system::error_code&);
-                void handle_connect(const boost::system::error_code&);
+                int socket_fd;
+                struct sockaddr_in remote_address;
 
-                void check_deadline();
+                fd_set socket_set;
 
-                boost::asio::io_service io_service_;
-                boost::asio::ip::tcp::endpoint remote_endpoint_;
-                boost::asio::ip::tcp::socket   socket_;
-                boost::asio::deadline_timer deadline_;
+                struct timeval connect_timeout = {3, 0};
+                struct timeval read_timeout    = {8, 0};
+                // void handle_wait(const boost::system::error_code&);
+                // void handle_connect(const boost::system::error_code&);
+
+                // void check_deadline();
+
+                // boost::asio::io_service io_service_;
+                // boost::asio::ip::tcp::endpoint remote_endpoint_;
+                // boost::asio::ip::tcp::socket   socket_;
+                // boost::asio::deadline_timer deadline_;
+
+                // bool timeout;
         };
 };
 
