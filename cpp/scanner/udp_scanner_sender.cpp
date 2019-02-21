@@ -37,7 +37,7 @@ int UDPSender::start_send() noexcept
                 UDPSender::remote_port_num
             );
 
-            std::cout << "[Sender] send to " << inet_ntoa(ip_address) << std::endl;
+            std::cout << "[UDP Sender] send to " << inet_ntoa(ip_address) << std::endl;
 
             socket_.async_send_to(
                 boost::asio::buffer(full_packet),

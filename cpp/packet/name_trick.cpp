@@ -1,17 +1,5 @@
 #include "name_trick.hpp"
 
-uint32_t NameTrick::hex_to_int(const std::string & question)
-{
-    const char* c_question_ = START_WITH_0x ? question.c_str() + 2 : question.c_str();
-    uint32_t result = 0;
-
-    while(*c_question_)
-    {
-        result = (result << 4) | NameTrick::hextable[*c_question_++];
-    }
-    return result;
-}
-
 bool NameTrick::check_authoritative(const std::string& question)
 {
     if (AUTHORITATIVE.size() > question.size())
@@ -33,11 +21,11 @@ uint32_t NameTrick::get_question_id(const std::string& question)
     if (after_split.size() < 2)
         return INVALID_ID;
 
-    if (after_split[0][0] == '0' and START_WITH_0x)
-        return hex_to_int(after_split[0]);
+    if (after_split[0][0] == '0')
+        return (uint32_t)std::strtoul(after_split[0].c_str()+2, nullptr, 16);
     
-    else if (after_split[1][0] == '0' and START_WITH_0x)
-        return hex_to_int(after_split[1]);
+    else if (after_split[1][0] == '0')
+        return (uint32_t)std::strtoul(after_split[1].c_str()+2, nullptr, 16);
 
     else
         return INVALID_ID;

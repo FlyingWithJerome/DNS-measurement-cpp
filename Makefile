@@ -56,11 +56,11 @@ udp_scanner.o : cpp/scanner/udp_scanner.cpp
 tcp_scanner.o : cpp/scanner/tcp_scanner.cpp
 	g++ -c cpp/scanner/tcp_scanner.cpp $(ALL_OPT)
 
-udp_scanner_main: udp_scanner_sender.o udp_scanner_listener.o udp_scanner.o name_tricks.o
-	g++ udp_scanner_sender.o udp_scanner_listener.o udp_scanner.o name_trick.o $(ALL_OPT) -o udp_scanner
+udp_scanner_main: udp_scanner_sender.o udp_scanner_listener.o udp_scanner.o name_tricks.o log_service.o
+	g++ udp_scanner_sender.o udp_scanner_listener.o udp_scanner.o log_service.o name_trick.o $(ALL_OPT) -o udp_scanner
 
-tcp_scanner_main: tcp_scanner.o
-	g++ tcp_scanner.o -o tcp_scanner $(ALL_OPT)
+tcp_scanner_main: tcp_scanner.o log_service.o name_tricks.o 
+	g++ tcp_scanner.o log_service.o name_trick.o -o tcp_scanner $(ALL_OPT)
 
 scanner: udp_scanner_main tcp_scanner_main
 	mv *.o build

@@ -2,10 +2,11 @@
 #define QUERY_COMMONS_
 
 #include <cstring>
+#include <stdio.h>
 
-#define INT_TO_HEX(input_int, output_str) std::stringstream address_formatter; \
-address_formatter << std::hex << input_int; \
-output_str = address_formatter.str();
+#define INT_TO_HEX(input_int, output_str) char out[20]; \
+sprintf(out, "0x%x", input_int); \
+output_str = out;
 
 #define CRAFT_QUERY_PACKET_RAW(full_packet, payload) uint8_t header[8] = { \
 0xb, 0xb7, 0, 0x35, (uint8_t)((payload.size() + 8) >> 8), (uint8_t)((payload.size() + 8) & 0xff), 0, 0 \

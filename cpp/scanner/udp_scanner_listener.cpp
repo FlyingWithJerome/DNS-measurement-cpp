@@ -3,6 +3,11 @@
 constexpr uint16_t UDPListener::local_port_num;
 constexpr uint16_t UDPListener::remote_port_num;
 
+constexpr char UDPListener::udp_normal_log_[];
+constexpr char UDPListener::udp_truncate_log_[];
+constexpr char UDPListener::udp_bad_response_log_[];
+
+
 UDPListener::UDPListener(boost::asio::io_service& io_service)
 : main_socket_(
     io_service,
@@ -23,6 +28,11 @@ UDPListener::UDPListener(boost::asio::io_service& io_service)
     );
 
     main_socket_.non_blocking(true);
+
+    init_new_log_file(udp_normal_log_);
+    init_new_log_file(udp_truncate_log_);
+    init_new_log_file(udp_bad_response_log_);
+
     this->start_receive();
 }
 
@@ -79,7 +89,7 @@ void UDPListener::handle_receive(
     catch(...)
     {
         std::cout << "[UDP Listener] received a malformed packet" << std::endl;
-        start_receive();
+        goto End;
     }
 
     std::cout 
@@ -98,17 +108,6 @@ void UDPListener::handle_receive(
 
         uint32_t question_id = NameTrick::get_question_id(question_name);
 
-        // std::string response_status;
-        // response_status = incoming_response.answers()[0].data() == "192.168.0.0" 
-        // ? "ok" : "answer_error";
-
-        // std::cout 
-        // << "[Receiver] receive one from " 
-        // << sender.address() 
-        // << " with "
-        // << response_status
-        // << std::endl;
-
         NameTrick::JumboType jumbo_type_ = NameTrick::get_jumbo_type(question_name);
         
         if(jumbo_type_ == NameTrick::JumboType::no_jumbo) // not a jumbo query, will start a jumbo query
@@ -116,7 +115,16 @@ void UDPListener::handle_receive(
             if (incoming_response.answers()[0].data() != "192.168.0.0")
             {
                 // write down the answer error
-                std::cout << "is an answer error " << std::endl;
+                // std::cout << "is an answer error " << std::endl;
+                UDP_SCANNER_BAD_RESPONSE_LOG(
+                    udp_bad_response_log_,
+                    sender,
+                    question_id,
+                    0,
+                    (int)jumbo_type_,
+                    incoming_response.answers_count(),
+                    "answer error"
+                )
                 goto End;
             }
             std::vector<uint8_t> packet;
@@ -128,15 +136,6 @@ void UDPListener::handle_receive(
             std::string question = std::string("jumbo1-") 
             + hex_address 
             + "-email-jxm959-case-edu.yumi.ipl.eecs.case.edu";
-
-            // std::cout 
-            // << "incoming answer: " 
-            // << question_name 
-            // << " sending another query on " 
-            // << question 
-            // << " to "
-            // << sender.address().to_string()
-            // << std::endl;
 
             CRAFT_FULL_QUERY_UDP(question, full_packet)
 
@@ -151,30 +150,64 @@ void UDPListener::handle_receive(
                     boost::asio::placeholders::bytes_transferred
                 )
             );
+            
+            UDP_SCANNER_NORMAL_LOG(udp_normal_log_, sender, question_id, "ok")
         }
         else
         {
             if (incoming_response.truncated()) // is a jumbo code and is truncated (as our expectation)
             {
                 // send to tcp scanner
-                std::cout << "sending to tcp: " << sender.address().to_string() << std::endl;
                 message_pack outgoing;
 
                 strcpy(outgoing.ip_address, sender.address().to_string().c_str());
                 strcpy(outgoing.question, question_name.c_str());
 
                 pipe_to_tcp_->send(&outgoing, sizeof(outgoing), 1);
+                UDP_SCANNER_TRUNCATE_LOG(udp_truncate_log_, sender, question_id, "tc_ok")
             }
             else // is a jumbo query but is not truncated
             {
-                // write down to [unable process fallback due to truncation]
+                UDP_SCANNER_TRUNCATE_LOG(udp_truncate_log_, sender, question_id, "tc_fail")
             }
         }
     }
-    else
+    else // is not even a legal udp packet
     {
-        // is not even a legal udp packet
-    }
+        std::string question_name;
+        if (incoming_response.answers_count() > 0)
+            question_name = incoming_response.answers()[0].dname();
+
+        else if (incoming_response.questions_count() > 0)
+            question_name = incoming_response.queries()[0].dname();
+
+        else
+        {
+            UDP_SCANNER_BAD_RESPONSE_LOG(
+                udp_bad_response_log_, 
+                sender, 
+                "0", 
+                incoming_response.rcode(),
+                "-1",
+                incoming_response.answers_count(),
+                ""
+            )
+            goto End;
+        }
+
+        uint32_t question_id            = NameTrick::get_question_id(question_name);
+        NameTrick::JumboType jumbo_type = NameTrick::get_jumbo_type(question_name);
+
+        UDP_SCANNER_BAD_RESPONSE_LOG(
+            udp_bad_response_log_, 
+            sender, 
+            question_id, 
+            std::to_string(incoming_response.rcode()),
+            std::to_string((int)jumbo_type),
+            incoming_response.answers_count(),
+            "--"
+        )
+    } // is not even a legal udp packet END----
 
     End:
     start_receive();

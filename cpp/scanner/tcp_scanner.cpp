@@ -1,7 +1,13 @@
 #include "tcp_scanner.hpp"
 
+constexpr char TCPScanner::tcp_normal_log_[];
+
 TCPScanner::TCPScanner()
+: work(
+    new boost::asio::io_service::work(io_service_)
+)
 {
+    std::cout << "[TCP Scanner] Max number thread launched: " << std::thread::hardware_concurrency() << std::endl;
     try
     {
         pipe_to_tcp_.reset(
@@ -11,9 +17,7 @@ TCPScanner::TCPScanner()
             )
         );
 
-        boost::asio::io_service::work work(io_service_);
-
-        for (int index = 0; index < 10; index++)
+        for (int index = 0; index < std::thread::hardware_concurrency(); index++)
         {
             thread_pool_.create_thread(
                 boost::bind(&boost::asio::io_service::run, &io_service_)
@@ -24,6 +28,8 @@ TCPScanner::TCPScanner()
     {
         std::cerr << e.what() << std::endl;
     }
+
+    init_new_log_file(tcp_normal_log_);
 }
 
 int TCPScanner::service_loop()
@@ -38,16 +44,8 @@ int TCPScanner::service_loop()
 
             pipe_to_tcp_->receive(&empty, sizeof(message_pack), recv_size, priority);
 
-            // io_service_.post(
-            //     boost::bind(
-            //         &TCPScanner::perform_tcp_query,
-            //         this,
-            //         std::string(empty.ip_address),
-            //         std::string(empty.question)
-            //     )
-            // );
-            thread_nest_.push_back(
-                std::thread(
+            io_service_.post(
+                boost::bind(
                     &TCPScanner::perform_tcp_query,
                     this,
                     std::string(empty.ip_address),
@@ -67,25 +65,16 @@ void TCPScanner::perform_tcp_query(
     std::string question
 )
 {
-    // std::unique_lock<std::mutex> lock_(mutex_, std::defer_lock);
-    // lock_.lock();
-    // std::cout << "the ip address is " << ip_address << std::endl;
-    // lock_.unlock();
-
     TCPClient client(ip_address.c_str());
-
-    std::cout << "[TCP Scanner] " << ip_address << " going to connect" <<  std::endl;
-
     client.connect();
+
+    uint32_t question_id = NameTrick::get_question_id(question);
 
     if (not client.is_connected)
     {
-        // write down "not connected"
-        std::cout << "[TCP Scanner] " << ip_address << " cannot be connnected" << std::endl;
+        TCP_SCANNER_NORMAL_LOG(tcp_normal_log_, ip_address, "0", "-1", "connect timeout")
         return;
     }
-
-    std::cout << "[TCP Scanner] " << ip_address << " connected" <<  std::endl;
     
     std::vector<uint8_t> full_packet;
     std::vector<uint8_t> response_packet;
@@ -95,25 +84,41 @@ void TCPScanner::perform_tcp_query(
 
     client.send(full_packet);
 
-    std::cout << "[TCP Scanner] " << ip_address << " had sent queries" <<  std::endl;
-
     if (client.receive(response_packet) <= 0)
     {
-        std::cout << "[TCP Scanner] " << ip_address << " does not send response back" << std::endl;
+        TCP_SCANNER_NORMAL_LOG(tcp_normal_log_, ip_address, "0", "-1", "recv timeout")
         return;
     }
-
-    std::cout << "[TCP Scanner] " << ip_address << " had response back" <<  std::endl;
 
     try
     {
         Tins::DNS readable_response(response_packet.data()+2, response_packet.size()-2);
 
         std::cout << "[TCP Scanner] packet name: " << readable_response.answers()[0].dname() << std::endl;
+
+        inspect_response(readable_response);
+
+        TCP_SCANNER_NORMAL_LOG(tcp_normal_log_, ip_address, question_id, std::to_string(readable_response.rcode()), "answer ok")
+
     }
     catch (...)
     {
         std::cout << "[TCP Scanner] " << ip_address << " had malformed packet" <<  std::endl;
+    }
+}
+
+void TCPScanner::inspect_response(Tins::DNS& response)
+{
+    if (response.rcode() != 0)
+    {
+        // the rcode is not even 0!
+        return;
+    }
+
+    if (response.answers_count() != 100)
+    {
+        // the number of answers is not 100, write down the actual answer count
+        return;
     }
 }
 
@@ -122,16 +127,6 @@ TCPScanner::~TCPScanner()
     io_service_.stop();
     thread_pool_.join_all();
 }
-// TCPScanner::~TCPScanner()
-// {
-//     for(auto& member : thread_nest_)
-//     {
-//         member.join();
-//     }
-//     thread_nest_.clear();
-
-//     boost::interprocess::message_queue::remove("pipe_to_tcp");
-// }
 
 
 TCPScanner::TCPClient::TCPClient(
@@ -187,7 +182,7 @@ int TCPScanner::TCPClient::send(const std::vector<uint8_t>& packet)
     );
 
     if (status < 0)
-        std::cout << "[Send function]" << strerror(errno) << std::endl;        
+        std::cout << "[Send function] " << strerror(errno) << std::endl;        
 
     return status;
 }

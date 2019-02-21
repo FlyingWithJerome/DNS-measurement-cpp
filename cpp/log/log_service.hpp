@@ -38,7 +38,7 @@ int init_new_log_file(const char* file_name);
 BOOST_LOG_ATTRIBUTE_KEYWORD(severity, "Severity", severity_level)
 BOOST_LOG_ATTRIBUTE_KEYWORD(a_channel, "Channel", std::string)
 
-typedef boost::log::sources::channel_logger< > logger_type;
+typedef boost::log::sources::channel_logger_mt< > logger_type;
 
 #define UDP_STANDARD_LOG(fn, qp, ep) {logger_type lg(boost::log::keywords::channel=fn); \
 BOOST_LOG(lg) \
@@ -67,6 +67,33 @@ BOOST_LOG(lg) \
 << edns.ECS_subnet_address  << std::string(",") \
 << edns.ECS_subnet_mask;}
 
+#define UDP_SCANNER_NORMAL_LOG(fn, ep, qid, rcode) {logger_type lg(boost::log::keywords::channel=fn); \
+BOOST_LOG(lg) \
+<< qid                      << std::string(",") \
+<< ep.address().to_string() << std::string(",") \
+<< rcode;}
+
+#define UDP_SCANNER_TRUNCATE_LOG(fn, ep, qid, tc) {logger_type lg(boost::log::keywords::channel=fn); \
+BOOST_LOG(lg) \
+<< qid                      << std::string(",") \
+<< ep.address().to_string() << std::string(",") \
+<< tc;}
+
+#define UDP_SCANNER_BAD_RESPONSE_LOG(fn, ep, qid, rcode, jumbo, ancount, msg) {logger_type lg(boost::log::keywords::channel=fn); \
+BOOST_LOG(lg) \
+<< qid                      << std::string(",") \
+<< ep.address().to_string() << std::string(",") \
+<< rcode                    << std::string(",") \
+<< jumbo                    << std::string(",") \
+<< ancount                  << std::string(",") \
+<< msg;}
+
+#define TCP_SCANNER_NORMAL_LOG(fn, addr, qid, rcode, msg) {logger_type lg(boost::log::keywords::channel=fn); \
+BOOST_LOG(lg) \
+<< qid   << std::string(",") \
+<< addr  << std::string(",") \
+<< rcode << std::string(",") \
+<< msg;}
 // bool my_filter(boost::log::value_ref< severity_level, tag::severity > const& level);
 
 // std::ostream& operator<< (std::ostream& strm, severity_level level);

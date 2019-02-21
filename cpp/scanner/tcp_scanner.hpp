@@ -24,6 +24,8 @@
 
 #include <tins/dns.h>
 
+#include "../log/log_service.hpp"
+#include "../packet/name_trick.hpp"
 #include "query_commons.hpp"
 
 class TCPScanner
@@ -34,11 +36,15 @@ class TCPScanner
         ~TCPScanner();
         int service_loop();
 
+        static constexpr char tcp_normal_log_[] = "tcp_scanner_normal.log";
+
     private:
         void perform_tcp_query(
             std::string,
             std::string
         );
+
+        void inspect_response(Tins::DNS&);
 
         std::vector<std::thread> thread_nest_;
         boost::scoped_ptr<boost::interprocess::message_queue> pipe_to_tcp_;
@@ -52,8 +58,8 @@ class TCPScanner
 
         boost::asio::io_service io_service_;
         boost::thread_group     thread_pool_;
+        boost::scoped_ptr<boost::asio::io_service::work> work;
 
-    public:
         class TCPClient
         {
             public:
