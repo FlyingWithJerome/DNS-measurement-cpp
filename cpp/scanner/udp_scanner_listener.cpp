@@ -8,7 +8,7 @@ UDPListener::UDPListener(boost::asio::io_service& io_service)
     io_service,
     boost::asio::ip::udp::endpoint(
         boost::asio::ip::address::from_string("0.0.0.0"), 
-        2999
+        local_port_num
     )
 )
 {
@@ -42,10 +42,12 @@ void UDPListener::start_receive()
 
 void UDPListener::reactor_read(const boost::system::error_code& error_code)
 {
-    if(error_code == boost::asio::error::operation_aborted)
-        return;
-
-    else if (not error_code)
+    if(error_code)
+    {
+        std::cout << "[UDP Listener] err msg " << error_code.message() << std::endl;
+        start_receive();
+    }
+    else
     {
         boost::asio::ip::udp::endpoint sender_info;
         
@@ -74,10 +76,20 @@ void UDPListener::handle_receive(
     {
         incoming_response = Tins::DNS(incoming_packet.data(), incoming_packet.size());
     }
-    catch(Tins::malformed_packet& except)
+    catch(...)
     {
-        return;
+        std::cout << "[UDP Listener] received a malformed packet" << std::endl;
+        start_receive();
     }
+
+    std::cout 
+    << "[UDP Listener] Address: " 
+    << sender.address().to_string()
+    << " rcode: "
+    << (int)incoming_response.rcode()
+    << " answer count: "
+    << incoming_response.answers_count()
+    << std::endl;
 
     if (incoming_response.rcode() == 0 and incoming_response.answers_count() > 0)
     { // is a legal response
@@ -86,7 +98,6 @@ void UDPListener::handle_receive(
 
         uint32_t question_id = NameTrick::get_question_id(question_name);
 
-        std::cout << "question name " << question_name << std::endl;
         // std::string response_status;
         // response_status = incoming_response.answers()[0].data() == "192.168.0.0" 
         // ? "ok" : "answer_error";
@@ -118,14 +129,14 @@ void UDPListener::handle_receive(
             + hex_address 
             + "-email-jxm959-case-edu.yumi.ipl.eecs.case.edu";
 
-            std::cout 
-            << "incoming answer: " 
-            << question_name 
-            << " sending another query on " 
-            << question 
-            << " to "
-            << sender.address().to_string()
-            << std::endl;
+            // std::cout 
+            // << "incoming answer: " 
+            // << question_name 
+            // << " sending another query on " 
+            // << question 
+            // << " to "
+            // << sender.address().to_string()
+            // << std::endl;
 
             CRAFT_FULL_QUERY_UDP(question, full_packet)
 
@@ -148,7 +159,7 @@ void UDPListener::handle_receive(
                 // send to tcp scanner
                 std::cout << "sending to tcp: " << sender.address().to_string() << std::endl;
                 message_pack outgoing;
-                
+
                 strcpy(outgoing.ip_address, sender.address().to_string().c_str());
                 strcpy(outgoing.question, question_name.c_str());
 

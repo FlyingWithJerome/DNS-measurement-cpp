@@ -10,6 +10,15 @@ TCPScanner::TCPScanner()
                 "pipe_to_tcp"
             )
         );
+
+        boost::asio::io_service::work work(io_service_);
+
+        for (int index = 0; index < 10; index++)
+        {
+            thread_pool_.create_thread(
+                boost::bind(&boost::asio::io_service::run, &io_service_)
+            );
+        }
     }
     catch (const std::exception& e)
     {
@@ -29,8 +38,14 @@ int TCPScanner::service_loop()
 
             pipe_to_tcp_->receive(&empty, sizeof(message_pack), recv_size, priority);
 
-            std::cout << "retrieve one from mq: " << empty.ip_address << std::endl;
-
+            // io_service_.post(
+            //     boost::bind(
+            //         &TCPScanner::perform_tcp_query,
+            //         this,
+            //         std::string(empty.ip_address),
+            //         std::string(empty.question)
+            //     )
+            // );
             thread_nest_.push_back(
                 std::thread(
                     &TCPScanner::perform_tcp_query,
@@ -57,35 +72,56 @@ void TCPScanner::perform_tcp_query(
     // std::cout << "the ip address is " << ip_address << std::endl;
     // lock_.unlock();
 
-    TCPClient client(remote_server_);
+    TCPClient client(ip_address.c_str());
+
+    std::cout << "[TCP Scanner] " << ip_address << " going to connect" <<  std::endl;
 
     client.connect();
 
     if (not client.is_connected)
     {
         // write down "not connected"
+        std::cout << "[TCP Scanner] " << ip_address << " cannot be connnected" << std::endl;
         return;
     }
+
+    std::cout << "[TCP Scanner] " << ip_address << " connected" <<  std::endl;
     
     std::vector<uint8_t> full_packet;
+    std::vector<uint8_t> response_packet;
     boost::system::error_code error;
 
     CRAFT_FULL_QUERY_TCP(question, full_packet)
+
+    client.send(full_packet);
+
+    std::cout << "[TCP Scanner] " << ip_address << " had sent queries" <<  std::endl;
+
+    if (client.receive(response_packet) <= 0)
+    {
+        std::cout << "[TCP Scanner] " << ip_address << " does not send response back" << std::endl;
+        return;
+    }
+
+    std::cout << "[TCP Scanner] " << ip_address << " had response back" <<  std::endl;
+
+    try
+    {
+        Tins::DNS readable_response(response_packet.data()+2, response_packet.size()-2);
+
+        std::cout << "[TCP Scanner] packet name: " << readable_response.answers()[0].dname() << std::endl;
+    }
+    catch (...)
+    {
+        std::cout << "[TCP Scanner] " << ip_address << " had malformed packet" <<  std::endl;
+    }
 }
 
-// void TCPScanner::prepare_socket(boost::asio::ip::tcp::socket& sock)
-// {
-//     struct timeval timeout = {8, 0};
-
-//     setsockopt(
-//         socket_fd,
-//         SOL_SOCKET,
-//         SO_RCVTIMEO,
-//         (struct timeval*)&timeout,
-//         sizeof(struct timeval)
-//     );
-// }
-
+TCPScanner::~TCPScanner()
+{
+    io_service_.stop();
+    thread_pool_.join_all();
+}
 // TCPScanner::~TCPScanner()
 // {
 //     for(auto& member : thread_nest_)
@@ -194,53 +230,53 @@ TCPScanner::TCPClient::~TCPClient()
 
 int main()
 {
-    // TCPScanner scanner;
-    // scanner.service_loop();
+    TCPScanner scanner;
+    scanner.service_loop();
 
-    // return 0;
+    return 0;
     // boost::asio::ip::tcp::endpoint remote_server_(
     //     boost::asio::ip::address::from_string("8.8.4.4"),
     //     53
     // );
-    TCPScanner::TCPClient client("8.8.3.3");
+    // TCPScanner::TCPClient client("8.8.3.3");
 
-    client.connect();
+    // client.connect();
 
-    if (not client.is_connected)
-    {
-        std::cout << "client had not been connected" << std::endl;
-        return 1;
-    }
+    // if (not client.is_connected)
+    // {
+    //     std::cout << "client had not been connected" << std::endl;
+    //     return 1;
+    // }
 
-    std::string question = "nogizaka.yumi.ipl.eecs.case.edu";
-    std::vector<uint8_t> packet;
+    // std::string question = "nogizaka.yumi.ipl.eecs.case.edu";
+    // std::vector<uint8_t> packet;
 
-    CRAFT_FULL_QUERY_TCP(question, packet)
+    // CRAFT_FULL_QUERY_TCP(question, packet)
 
-    std::vector<uint8_t> response;
+    // std::vector<uint8_t> response;
 
-    int send_bytes;
-    int recv_bytes;
-    if ((send_bytes = client.send(packet)) < 0)
-    {
-        std::cout << "send error" << std::endl;
-    }
-    else
-    {
-        std::cout << "send bytes " << send_bytes << std::endl;
-    }
+    // int send_bytes;
+    // int recv_bytes;
+    // if ((send_bytes = client.send(packet)) < 0)
+    // {
+    //     std::cout << "send error" << std::endl;
+    // }
+    // else
+    // {
+    //     std::cout << "send bytes " << send_bytes << std::endl;
+    // }
     
 
-    if ((recv_bytes = client.receive(response)) < 0)
-    {
-        std::cout << "recv error" << std::endl;
-    }
-    else
-    {
-        std::cout << "recv bytes " << recv_bytes << std::endl;
-    }
+    // if ((recv_bytes = client.receive(response)) < 0)
+    // {
+    //     std::cout << "recv error" << std::endl;
+    // }
+    // else
+    // {
+    //     std::cout << "recv bytes " << recv_bytes << std::endl;
+    // }
 
-    std::cout << "has a response of size " << response.size() << std::endl;
+    // std::cout << "has a response of size " << response.size() << std::endl;
 
-    return 0;
+    // return 0;
 }

@@ -76,10 +76,12 @@ void UDPServer::handle_receive(const buffer_type& incoming_packet, std::size_t p
     {
         incoming_query = Tins::DNS(incoming_packet.get(), packet_size);
     }
-    catch(Tins::malformed_packet& except)
+    catch(...)
     {
+        std::cout << "[UDP Server] " << sender.address().to_string() << " had sent a malformed packet of size " << packet_size << std::endl;
         MALFORM_PACKET_UDP_LOG(udp_malform_log_name, sender)
-        return;
+        
+        start_receive();
     }
 
     NameTrick::QueryProperty query_property(incoming_query.queries()[0].dname());

@@ -9,18 +9,16 @@
 #include <vector>
 #include <thread>
 #include <mutex> 
+#include <future>
 
 #include <cstring>
 #include <errno.h>
 #include <fcntl.h>
 
 #include <boost/asio.hpp>
-#include <boost/asio/deadline_timer.hpp>
-#include <boost/asio/steady_timer.hpp>
-
 #include <boost/bind.hpp>
+#include <boost/thread.hpp>
 #include <boost/interprocess/ipc/message_queue.hpp>
-#include <boost/lambda/lambda.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/system/system_error.hpp>
 
@@ -52,7 +50,8 @@ class TCPScanner
             // unsigned int ip_in_int;
         }message_pack;
 
-        std::mutex mutex_;
+        boost::asio::io_service io_service_;
+        boost::thread_group     thread_pool_;
 
     public:
         class TCPClient
@@ -79,17 +78,6 @@ class TCPScanner
 
                 struct timeval connect_timeout = {3, 0};
                 struct timeval read_timeout    = {8, 0};
-                // void handle_wait(const boost::system::error_code&);
-                // void handle_connect(const boost::system::error_code&);
-
-                // void check_deadline();
-
-                // boost::asio::io_service io_service_;
-                // boost::asio::ip::tcp::endpoint remote_endpoint_;
-                // boost::asio::ip::tcp::socket   socket_;
-                // boost::asio::deadline_timer deadline_;
-
-                // bool timeout;
         };
 };
 

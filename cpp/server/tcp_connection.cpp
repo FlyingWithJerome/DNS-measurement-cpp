@@ -4,8 +4,12 @@ TCPConnection::TCPConnection(
     boost::asio::io_service& io_service,
     const char* file_name
 )
-:main_socket_(io_service)
-,file_name_(file_name)
+: main_socket_(
+    io_service
+)
+, file_name_(
+    file_name
+)
 {
 }
 
@@ -47,25 +51,28 @@ void TCPConnection::handle_reactor_receive(
         return;
     }
 
-    Tins::DNS readable_packet(buffer_+2, read_size-2);
+    Tins::DNS readable_packet;
+
+    try
+    {
+        readable_packet = Tins::DNS(buffer_+2, read_size-2);
+    }
+    catch(...)
+    {
+        std::cout << "[TCP Server] " << main_socket_.remote_endpoint().address().to_string() << " had sent a malformed packet of size " << read_size-2 << std::endl;
+        // MALFORM_PACKET_UDP_LOG(udp_malform_log_name, sender)
+        return;
+    }
 
     NameTrick::QueryProperty query_property(readable_packet.queries()[0].dname());
 
     buffer_type write_buffer = NULL;
-
-    // size_t attempted_out_size = ResponseMaker::response_maker_tcp(
-    //     readable_packet,
-    //     query_property,
-    //     write_buffer
-    // );
 
     RESPONSE_MAKER_TCP(readable_packet, query_property, write_buffer)
 
     main_socket_.async_send(
         boost::asio::buffer(
             raw_data
-            // write_buffer.get(),
-            // attempted_out_size
         ), 
         boost::bind(
             &TCPConnection::handle_send, 
