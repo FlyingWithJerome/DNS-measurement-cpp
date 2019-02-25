@@ -121,13 +121,13 @@ void TCPScanner::perform_tcp_query(
     catch (...)
     {
         std::cout << "[TCP Scanner] " << ip_address << " had malformed packet" <<  "\n";
-        TCP_SCANNER_NORMAL_LOG(
-            tcp_normal_log_, 
-            ip_address.c_str(), 
-            question_id, 
-            readable_response.rcode(), 
-            "malformed_tcp_response"
-        )
+        // TCP_SCANNER_NORMAL_LOG(
+        //     tcp_normal_log_, 
+        //     ip_address.c_str(), 
+        //     question_id, 
+        //     readable_response.rcode(), 
+        //     "malformed_tcp_response"
+        // )
     }
 }
 
@@ -179,7 +179,7 @@ TCPScanner::TCPClient::TCPClient(
     false
 )
 {
-    has_bad_fd = (socket_fd == -1)
+    has_bad_fd = (socket_fd == -1);
     if (not has_bad_fd)
     {
         remote_address.sin_family = AF_INET;
@@ -216,7 +216,7 @@ int TCPScanner::TCPClient::connect()
     return is_connected;
 }
 
-int TCPScanner::TCPClient::send(const std::vector<uint8_t>& packet)
+int TCPScanner::TCPClient::send(const std::vector<uint8_t>& packet) noexcept
 {
     int status = ::send(
         socket_fd,

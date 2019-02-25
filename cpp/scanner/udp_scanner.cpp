@@ -1,7 +1,9 @@
 #include <iostream>
+#include <thread>
 #include <string>
 
 #include <boost/asio.hpp>
+#include <boost/thread.hpp>
 #include <boost/program_options.hpp>
 
 #include "udp_scanner_listener.hpp"
@@ -29,11 +31,32 @@ int main(int argc, char** argv)
 
     std::string file_path = variables_map_["file_path"].as<std::string>();
 
-    boost::asio::io_service io_service;
-    UDPListener listener(io_service);
-    UDPSender   sender(file_path, io_service);
+    boost::asio::io_service io_service_listener;
+    boost::asio::io_service io_service_sender;
+
+    unsigned int number_of_threads = std::thread::hardware_concurrency() > 0 ?
+    std::thread::hardware_concurrency() : 16;
+
+    std::cout << "[Scanner General] Number of threads (listener+sender): " <<  number_of_threads << "\n";
+
+    boost::thread_group thread_pool_;
+    UDPListener listener(io_service_sender);
+    UDPSender   sender(file_path, io_service_listener);
+
     sender.start_send();
-    io_service.run();
+
+    thread_pool_.create_thread(
+        [&io_service_sender](){io_service_sender.run();}
+    );
+
+    for(unsigned int index = 0; index < number_of_threads - 1; index++)
+    {
+        thread_pool_.create_thread(
+            [&io_service_listener](){io_service_listener.run();}
+        );
+    }
+
+    thread_pool_.join_all();
 
     return 0;
 }

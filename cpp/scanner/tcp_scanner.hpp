@@ -71,7 +71,7 @@ class TCPScanner
                 ~TCPClient();
 
                 int connect();
-                int send(const std::vector<uint8_t>&);
+                int send(const std::vector<uint8_t>&) noexcept;
                 int receive(std::vector<uint8_t>&);
 
                 bool is_connected;
