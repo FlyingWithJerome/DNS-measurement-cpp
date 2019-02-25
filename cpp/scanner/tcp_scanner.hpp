@@ -34,7 +34,7 @@ class TCPScanner
         TCPScanner();
         TCPScanner(const TCPScanner&) = delete;
         ~TCPScanner();
-        int service_loop();
+        int service_loop() noexcept;
 
         static constexpr char tcp_normal_log_[] = "tcp_scanner_normal.log";
 
@@ -44,7 +44,7 @@ class TCPScanner
             std::string
         );
 
-        void inspect_response(Tins::DNS&);
+        void inspect_response(const Tins::DNS&, std::string&);
 
         std::vector<std::thread> thread_nest_;
         boost::scoped_ptr<boost::interprocess::message_queue> pipe_to_tcp_;
@@ -75,6 +75,7 @@ class TCPScanner
                 int receive(std::vector<uint8_t>&);
 
                 bool is_connected;
+                bool has_bad_fd;
 
             private:
                 int socket_fd;

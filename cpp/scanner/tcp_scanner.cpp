@@ -7,7 +7,6 @@ TCPScanner::TCPScanner()
     new boost::asio::io_service::work(io_service_)
 )
 {
-    std::cout << "[TCP Scanner] Max number thread launched: " << std::thread::hardware_concurrency() << std::endl;
     try
     {
         pipe_to_tcp_.reset(
@@ -32,7 +31,7 @@ TCPScanner::TCPScanner()
     init_new_log_file(tcp_normal_log_);
 }
 
-int TCPScanner::service_loop()
+int TCPScanner::service_loop() noexcept
 {
     try
     {
@@ -66,19 +65,24 @@ void TCPScanner::perform_tcp_query(
 )
 {
     TCPClient client(ip_address.c_str());
+
+    if (client.has_bad_fd)
+    {
+        return;
+    }
+
     client.connect();
 
     uint32_t question_id = NameTrick::get_question_id(question);
 
     if (not client.is_connected)
     {
-        TCP_SCANNER_NORMAL_LOG(tcp_normal_log_, ip_address, "0", "-1", "connect timeout")
+        TCP_SCANNER_NORMAL_LOG(tcp_normal_log_, ip_address.c_str(), 0, -1, "connect_timeout")
         return;
     }
     
     std::vector<uint8_t> full_packet;
     std::vector<uint8_t> response_packet;
-    boost::system::error_code error;
 
     CRAFT_FULL_QUERY_TCP(question, full_packet)
 
@@ -86,7 +90,13 @@ void TCPScanner::perform_tcp_query(
 
     if (client.receive(response_packet) <= 0)
     {
-        TCP_SCANNER_NORMAL_LOG(tcp_normal_log_, ip_address, "0", "-1", "recv timeout")
+        TCP_SCANNER_NORMAL_LOG(
+            tcp_normal_log_, 
+            ip_address.c_str(), 
+            0, 
+            -1, 
+            "recv_timeout"
+        )
         return;
     }
 
@@ -94,32 +104,62 @@ void TCPScanner::perform_tcp_query(
     {
         Tins::DNS readable_response(response_packet.data()+2, response_packet.size()-2);
 
-        std::cout << "[TCP Scanner] packet name: " << readable_response.answers()[0].dname() << std::endl;
+        std::cout << "[TCP Scanner] packet name: " << readable_response.answers()[0].dname() << "\n";
 
-        inspect_response(readable_response);
+        std::string result;
+        inspect_response(readable_response, result);
 
-        TCP_SCANNER_NORMAL_LOG(tcp_normal_log_, ip_address, question_id, std::to_string(readable_response.rcode()), "answer ok")
+        TCP_SCANNER_NORMAL_LOG(
+            tcp_normal_log_, 
+            ip_address.c_str(), 
+            question_id, 
+            readable_response.rcode(), 
+            result
+        )
 
     }
     catch (...)
     {
-        std::cout << "[TCP Scanner] " << ip_address << " had malformed packet" <<  std::endl;
+        std::cout << "[TCP Scanner] " << ip_address << " had malformed packet" <<  "\n";
+        TCP_SCANNER_NORMAL_LOG(
+            tcp_normal_log_, 
+            ip_address.c_str(), 
+            question_id, 
+            readable_response.rcode(), 
+            "malformed_tcp_response"
+        )
     }
 }
 
-void TCPScanner::inspect_response(Tins::DNS& response)
+void TCPScanner::inspect_response(const Tins::DNS& response, std::string& result_str)
 {
     if (response.rcode() != 0)
     {
         // the rcode is not even 0!
+        std::stringstream result_builder;
+        result_builder 
+        << "non_zero_rcode(rcode:"
+        << response.rcode()
+        << ")";
+
+        result_str = result_builder.str();
         return;
     }
 
     if (response.answers_count() != 100)
     {
         // the number of answers is not 100, write down the actual answer count
+        std::stringstream result_builder;
+        result_builder 
+        << "wrong_number_of_entries("
+        << response.answers_count()
+        << "/100)";
+
+        result_str = result_builder.str();
         return;
     }
+
+    result_str = "answer_ok";
 }
 
 TCPScanner::~TCPScanner()
@@ -139,18 +179,22 @@ TCPScanner::TCPClient::TCPClient(
     false
 )
 {
-    remote_address.sin_family = AF_INET;
-    remote_address.sin_port   = htons((uint16_t)53);
+    has_bad_fd = (socket_fd == -1)
+    if (not has_bad_fd)
+    {
+        remote_address.sin_family = AF_INET;
+        remote_address.sin_port   = htons((uint16_t)53);
 
-    int status = inet_aton(remote_addr, &remote_address.sin_addr);
+        int status = inet_aton(remote_addr, &remote_address.sin_addr);
 
-    if (status == 0)
-        std::cout << "the address is invalid: " << remote_addr << std::endl;
+        if (status == 0)
+            std::cout << "the address is invalid: " << remote_addr << std::endl;
 
-    fcntl(socket_fd, F_SETFL, O_NONBLOCK);
+        fcntl(socket_fd, F_SETFL, O_NONBLOCK);
 
-    FD_ZERO(&socket_set);
-    FD_SET(socket_fd, &socket_set);
+        FD_ZERO(&socket_set);
+        FD_SET(socket_fd, &socket_set);
+    }
 }
 
 int TCPScanner::TCPClient::connect()

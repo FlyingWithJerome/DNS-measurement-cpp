@@ -66,9 +66,7 @@ void TCPConnection::handle_reactor_receive(
 
     NameTrick::QueryProperty query_property(readable_packet.queries()[0].dname());
 
-    buffer_type write_buffer = NULL;
-
-    RESPONSE_MAKER_TCP(readable_packet, query_property, write_buffer)
+    RESPONSE_MAKER_TCP(readable_packet, query_property)
 
     main_socket_.async_send(
         boost::asio::buffer(
@@ -77,7 +75,6 @@ void TCPConnection::handle_reactor_receive(
         boost::bind(
             &TCPConnection::handle_send, 
             shared_from_this(), 
-            write_buffer,
             boost::asio::placeholders::error,
             boost::asio::placeholders::bytes_transferred
         )
@@ -87,7 +84,6 @@ void TCPConnection::handle_reactor_receive(
 }
 
 void TCPConnection::handle_send(
-    buffer_type&, 
     const boost::system::error_code& error_code, 
     std::size_t
 )

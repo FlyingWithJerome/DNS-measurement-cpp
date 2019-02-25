@@ -38,7 +38,6 @@ class TCPConnection : public boost::enable_shared_from_this<TCPConnection>
         );
 
         void handle_send(
-            buffer_type&, 
             const boost::system::error_code&, 
             std::size_t
         );

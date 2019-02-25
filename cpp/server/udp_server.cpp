@@ -72,69 +72,69 @@ void UDPServer::reactor_read(const boost::system::error_code& error_code)
 void UDPServer::handle_receive(const buffer_type& incoming_packet, std::size_t packet_size, const boost::asio::ip::udp::endpoint& sender)
 {
     Tins::DNS incoming_query;
+    std::string question_name;
+    bool is_malformed_packet = false;
+
     try
     {
         incoming_query = Tins::DNS(incoming_packet.get(), packet_size);
+        question_name  = incoming_query.queries()[0].dname();
+        is_malformed_packet = (question_name.size() > 1);
     }
     catch(...)
     {
         std::cout << "[UDP Server] " << sender.address().to_string() << " had sent a malformed packet of size " << packet_size << std::endl;
         MALFORM_PACKET_UDP_LOG(udp_malform_log_name, sender)
         
-        start_receive();
+        is_malformed_packet = true;
     }
 
-    NameTrick::QueryProperty query_property(incoming_query.queries()[0].dname());
+    if (not is_malformed_packet)
+    {
+        NameTrick::QueryProperty query_property(question_name);
 
-    buffer_type write_buffer = NULL;
+        buffer_type write_buffer = NULL;
 
-    std::cout 
-    << "[UDP] Processing " 
-    << query_property.name 
-    << " <Question Identifier> " << query_property.question_id
-    << " " << sender.address() 
-    << ":" << sender.port() 
-    << " <TR Flag>: " << query_property.will_truncate
-    << std::endl;
+        std::cout 
+        << "[UDP] Processing " 
+        << question_name 
+        << " <Question Identifier> " << query_property.question_id
+        << " " << sender.address() 
+        << ":" << sender.port() 
+        << " <TR Flag>: " << query_property.will_truncate
+        << std::endl;
 
-    if (not query_property.will_truncate)
-        UDP_STANDARD_LOG(udp_log_name_, query_property, sender)
+        if (not query_property.will_truncate)
+            UDP_STANDARD_LOG(udp_log_name_, query_property, sender)
 
-    else
-        UDP_TRUNCATION_LOG(udp_tc_log_name_, query_property, sender)
+        else
+            UDP_TRUNCATION_LOG(udp_tc_log_name_, query_property, sender)
 
-    RESPONSE_MAKER_UDP(incoming_query, query_property, write_buffer)
+        RESPONSE_MAKER_UDP(incoming_query, query_property)
 
-    // size_t attempted_out_size = ResponseMaker::response_maker_udp(
-    //     incoming_query,
-    //     query_property,
-    //     write_buffer
-    // );
+        main_socket_.async_send_to(
+            boost::asio::buffer(
+                raw_data
+            ), 
+            sender,
+            boost::bind(
+                &UDPServer::handle_send, 
+                this, 
+                write_buffer,
+                boost::asio::placeholders::error,
+                boost::asio::placeholders::bytes_transferred
+            )
+        );
 
-    main_socket_.async_send_to(
-        boost::asio::buffer(
-            raw_data
-            // write_buffer.get(),
-            // attempted_out_size
-        ), 
-        sender,
-        boost::bind(
-            &UDPServer::handle_send, 
-            this, 
-            write_buffer,
-            boost::asio::placeholders::error,
-            boost::asio::placeholders::bytes_transferred
-        )
-    );
+        EDNS edns_result(incoming_query);
+        EDNS_LOG(udp_edns_log_name_, query_property, sender, edns_result)
 
-    EDNS edns_result(incoming_query);
-    EDNS_LOG(udp_edns_log_name_, query_property, sender, edns_result)
-
-    std::cout 
-    << "the UDP Payload is " << edns_result.EDNS0_payload 
-    << " the ECS subnet is " << edns_result.ECS_subnet_address 
-    << "/" << edns_result.ECS_subnet_mask 
-    << std::endl;
+        std::cout 
+        << "the UDP Payload is " << edns_result.EDNS0_payload 
+        << " the ECS subnet is " << edns_result.ECS_subnet_address 
+        << "/" << edns_result.ECS_subnet_mask 
+        << "\n";
+    }
 
     start_receive();
 }

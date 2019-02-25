@@ -88,7 +88,7 @@ void UDPListener::handle_receive(
     }
     catch(...)
     {
-        std::cout << "[UDP Listener] received a malformed packet" << std::endl;
+        std::cout << "[UDP Listener] received a malformed packet\n";
         goto End;
     }
 
@@ -99,7 +99,7 @@ void UDPListener::handle_receive(
     << (int)incoming_response.rcode()
     << " answer count: "
     << incoming_response.answers_count()
-    << std::endl;
+    << "\n";
 
     if (incoming_response.rcode() == 0 and incoming_response.answers_count() > 0)
     { // is a legal response
@@ -115,7 +115,6 @@ void UDPListener::handle_receive(
             if (incoming_response.answers()[0].data() != "192.168.0.0")
             {
                 // write down the answer error
-                // std::cout << "is an answer error " << std::endl;
                 UDP_SCANNER_BAD_RESPONSE_LOG(
                     udp_bad_response_log_,
                     sender,
@@ -161,7 +160,7 @@ void UDPListener::handle_receive(
                 message_pack outgoing;
 
                 strcpy(outgoing.ip_address, sender.address().to_string().c_str());
-                strcpy(outgoing.question, question_name.c_str());
+                strcpy(outgoing.question,   question_name.c_str());
 
                 pipe_to_tcp_->send(&outgoing, sizeof(outgoing), 1);
                 UDP_SCANNER_TRUNCATE_LOG(udp_truncate_log_, sender, question_id, "tc_ok")
@@ -186,15 +185,16 @@ void UDPListener::handle_receive(
             UDP_SCANNER_BAD_RESPONSE_LOG(
                 udp_bad_response_log_, 
                 sender, 
-                "0", 
+                0, 
                 incoming_response.rcode(),
-                "-1",
+                -1,
                 incoming_response.answers_count(),
-                ""
+                "no_records_included"
             )
             goto End;
         }
 
+        std::transform(question_name.begin(), question_name.end(), question_name.begin(), ::tolower);
         uint32_t question_id            = NameTrick::get_question_id(question_name);
         NameTrick::JumboType jumbo_type = NameTrick::get_jumbo_type(question_name);
 
@@ -202,8 +202,8 @@ void UDPListener::handle_receive(
             udp_bad_response_log_, 
             sender, 
             question_id, 
-            std::to_string(incoming_response.rcode()),
-            std::to_string((int)jumbo_type),
+            incoming_response.rcode(),
+            (int)jumbo_type,
             incoming_response.answers_count(),
             "--"
         )

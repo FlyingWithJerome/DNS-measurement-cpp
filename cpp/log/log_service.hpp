@@ -13,9 +13,10 @@
 
 #include <iostream>
 #include <fstream>
+#include <sstream>
+#include <stdio.h>
 
 #include <memory>
-
 
 #define NAMETRICK_EXTERNAL_INCLUDE_ 1
 #include "../packet/name_trick.hpp"
@@ -80,21 +81,36 @@ BOOST_LOG(lg) \
 << tc;}
 
 #define UDP_SCANNER_BAD_RESPONSE_LOG(fn, ep, qid, rcode, jumbo, ancount, msg) {logger_type lg(boost::log::keywords::channel=fn); \
-BOOST_LOG(lg) \
-<< qid                      << std::string(",") \
-<< ep.address().to_string() << std::string(",") \
-<< rcode                    << std::string(",") \
-<< jumbo                    << std::string(",") \
-<< ancount                  << std::string(",") \
-<< msg;}
+char log_entry[100]; \
+sprintf( \
+  log_entry, \
+  "%u,%s,%d,%d,%d,%s", \
+  qid, \
+  ep.address().to_string().c_str(), \
+  rcode, \
+  jumbo, \
+  ancount, \
+  msg \
+); \
+BOOST_LOG(lg) << log_entry;}
+// BOOST_LOG(lg) \
+// << qid                      << std::string(",") \
+// << ep.address().to_string() << std::string(",") \
+// << rcode                    << std::string(",") \
+// << jumbo                    << std::string(",") \
+// << ancount                  << std::string(",") \
+// << msg;}
 
 #define TCP_SCANNER_NORMAL_LOG(fn, addr, qid, rcode, msg) {logger_type lg(boost::log::keywords::channel=fn); \
+char log_entry[100]; \
+sprintf( \
+  log_entry, \
+  "%u,%s,%d,%s", \
+  qid, \
+  addr, \
+  rcode, \
+  msg); \
 BOOST_LOG(lg) \
-<< qid   << std::string(",") \
-<< addr  << std::string(",") \
-<< rcode << std::string(",") \
-<< msg;}
-// bool my_filter(boost::log::value_ref< severity_level, tag::severity > const& level);
+<< log_entry;}
 
-// std::ostream& operator<< (std::ostream& strm, severity_level level);
 #endif
