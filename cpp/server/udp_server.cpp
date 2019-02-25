@@ -73,24 +73,11 @@ void UDPServer::handle_receive(const buffer_type& incoming_packet, std::size_t p
 {
     Tins::DNS incoming_query;
     std::string question_name;
-    bool is_malformed_packet = false;
 
     try
     {
         incoming_query = Tins::DNS(incoming_packet.get(), packet_size);
         question_name  = incoming_query.queries()[0].dname();
-        is_malformed_packet = (question_name.size() > 1);
-    }
-    catch(...)
-    {
-        std::cout << "[UDP Server] " << sender.address().to_string() << " had sent a malformed packet of size " << packet_size << std::endl;
-        MALFORM_PACKET_UDP_LOG(udp_malform_log_name, sender)
-        
-        is_malformed_packet = true;
-    }
-
-    if (not is_malformed_packet)
-    {
         NameTrick::QueryProperty query_property(question_name);
 
         buffer_type write_buffer = NULL;
@@ -102,7 +89,7 @@ void UDPServer::handle_receive(const buffer_type& incoming_packet, std::size_t p
         << " " << sender.address() 
         << ":" << sender.port() 
         << " <TR Flag>: " << query_property.will_truncate
-        << std::endl;
+        << "\n";
 
         if (not query_property.will_truncate)
             UDP_STANDARD_LOG(udp_log_name_, query_property, sender)
@@ -134,6 +121,12 @@ void UDPServer::handle_receive(const buffer_type& incoming_packet, std::size_t p
         << " the ECS subnet is " << edns_result.ECS_subnet_address 
         << "/" << edns_result.ECS_subnet_mask 
         << "\n";
+
+    }
+    catch(...)
+    {
+        std::cout << "[UDP Server] " << sender.address().to_string() << " had sent a malformed packet of size " << packet_size << std::endl;
+        MALFORM_PACKET_UDP_LOG(udp_malform_log_name, sender) 
     }
 
     start_receive();
