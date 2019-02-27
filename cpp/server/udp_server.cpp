@@ -15,16 +15,10 @@ UDPServer::UDPServer(boost::asio::io_service& io_service)
         DNS_PORT
     )
 )
-{    
+{
+
     boost::asio::socket_base::receive_buffer_size option(rcv_buf_size);
     main_socket_.set_option(option);
-
-    // int socket_fd = main_socket_.native_handle();
-
-    // if (setsockopt(socket_fd, SOL_SOCKET, SO_RCVBUF, &UDPServer::rcv_buf_size, sizeof(uint32_t)) == -1) 
-    // {
-    //     std::cout << "[UDP Server] Error setting the rcv buf\n";
-    // }
 
     boost::asio::socket_base::receive_buffer_size buf_size;
     main_socket_.get_option(buf_size);

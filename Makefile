@@ -5,19 +5,19 @@
 # BOOST_LIB = /usr/lib
 BOOST_LOG = -DBOOST_LOG_DYN_LINK -lboost_system -lboost_log -lboost_log_setup -lboost_program_options
 BOOST_FLAG = -lboost_thread
-TINS_FLAG = -ltins
+TINS_FLAG = -L/usr/local/lib/libtins.so -ltins
 POSIX_FLAG = -lpthread -lrt
 CPP_OPT = -std=c++11 -g
 OPTIMIZATION = -O3
 
-ALL_OPT = $(CPP_OPT) $(OPTIMIZATION) $(TINS_FLAG) $(POSIX_FLAG) $(BOOST_FLAG) $(BOOST_LOG)
+ALL_OPT = $(CPP_OPT) $(OPTIMIZATION) $(BOOST_FLAG) $(BOOST_LOG) $(TINS_FLAG) $(POSIX_FLAG)
 # PYTHON_DEFAULT = /Library/Frameworks/Python.framework/Versions/3.7/include/python3.7m
 
 TARGET_SERVER = server_main
 TARGET_SCANNER = scanner_main
 
 $(TARGET_SERVER): $(TARGET_SERVER).o log_service.o constants.o name_tricks.o response_maker.o tcp_server.o udp_server.o edns.o
-	g++ *.o $(ALL_OPT) -o $(TARGET_SERVER) && mv *.o build
+	g++ *.o $(ALL_OPT) -static-libstdc++ -o $(TARGET_SERVER) && mv *.o build
 
 $(TARGET_SERVER).o : cpp/server/server_main.cpp
 	g++ -c cpp/server/server_main.cpp $(ALL_OPT)
