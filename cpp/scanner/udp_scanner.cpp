@@ -35,7 +35,7 @@ int main(int argc, char** argv)
     boost::asio::io_service io_service_sender;
 
     unsigned int number_of_threads = std::thread::hardware_concurrency() > 0 ?
-    std::thread::hardware_concurrency() : 16;
+    std::thread::hardware_concurrency() : 4;
 
     std::cout << "[Scanner General] Number of threads (listener+sender): " <<  number_of_threads << "\n";
 

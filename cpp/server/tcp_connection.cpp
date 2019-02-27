@@ -88,6 +88,6 @@ void TCPConnection::handle_send(
     std::size_t
 )
 {
-    if(error_code)
+    if (error_code)
         std::cout << error_code.message() << std::endl;
 }

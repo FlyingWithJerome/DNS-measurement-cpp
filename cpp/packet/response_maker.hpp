@@ -55,7 +55,7 @@ for(int i=0; i < NUMBER_OF_LONG_ENTRIES; i++){ \
 response.rcode(DNS_RCODE_REFUSED);}\
 uint16_t size_of_packet = (uint16_t)response.size(); \
 std::vector<uint8_t>raw_data = response.serialize(); \
-uint8_t res_size[] = {size_of_packet >> 8, size_of_packet & 0xFF}; \
+uint8_t res_size[] = {(uint8_t)(size_of_packet >> 8), (uint8_t)(size_of_packet & 0xFF)}; \
 raw_data.insert(raw_data.begin(), res_size, res_size+2);
 
 #endif

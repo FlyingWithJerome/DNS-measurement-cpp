@@ -16,6 +16,9 @@
 #include <tins/dns.h>
 #include <tins/exceptions.h>
 
+#include <sys/socket.h>
+#include <sys/types.h>
+
 #ifdef FROM_UDP_SERVER
 #define UDP_ANSWERS_
 #endif

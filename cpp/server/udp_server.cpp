@@ -5,6 +5,8 @@ constexpr char UDPServer::udp_tc_log_name_[];
 constexpr char UDPServer::udp_edns_log_name_[];
 constexpr char UDPServer::udp_malform_log_name[];
 
+constexpr uint32_t UDPServer::rcv_buf_size;
+
 UDPServer::UDPServer(boost::asio::io_service& io_service)
 :main_socket_(
     io_service, 
@@ -14,11 +16,20 @@ UDPServer::UDPServer(boost::asio::io_service& io_service)
     )
 )
 {    
-    boost::asio::socket_base::send_buffer_size buf_size;
+    boost::asio::socket_base::receive_buffer_size option(rcv_buf_size);
+    main_socket_.set_option(option);
 
+    // int socket_fd = main_socket_.native_handle();
+
+    // if (setsockopt(socket_fd, SOL_SOCKET, SO_RCVBUF, &UDPServer::rcv_buf_size, sizeof(uint32_t)) == -1) 
+    // {
+    //     std::cout << "[UDP Server] Error setting the rcv buf\n";
+    // }
+
+    boost::asio::socket_base::receive_buffer_size buf_size;
     main_socket_.get_option(buf_size);
 
-    std::cout << "udp socket buffer size " << buf_size.value() << std::endl;
+    std::cout << "[UDP Server] UDP socket buffer size " << buf_size.value() << std::endl;
 
     init_new_log_file(udp_log_name_);
     init_new_log_file(udp_tc_log_name_);
@@ -126,7 +137,7 @@ void UDPServer::handle_receive(const buffer_type& incoming_packet, std::size_t p
     catch(...)
     {
         std::cout << "[UDP Server] " << sender.address().to_string() << " had sent a malformed packet of size " << packet_size << std::endl;
-        MALFORM_PACKET_UDP_LOG(udp_malform_log_name, sender) 
+        UDP_MALFORM_PACKET_LOG(udp_malform_log_name, sender) 
     }
 
     start_receive();

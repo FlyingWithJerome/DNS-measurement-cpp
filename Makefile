@@ -8,8 +8,9 @@ BOOST_FLAG = -lboost_thread
 TINS_FLAG = -ltins
 POSIX_FLAG = -lpthread -lrt
 CPP_OPT = -std=c++11 -g
+OPTIMIZATION = -O3
 
-ALL_OPT = $(CPP_OPT) $(POSIX_FLAG) $(BOOST_FLAG) $(BOOST_LOG) $(TINS_FLAG)
+ALL_OPT = $(CPP_OPT) $(OPTIMIZATION) $(TINS_FLAG) $(POSIX_FLAG) $(BOOST_FLAG) $(BOOST_LOG)
 # PYTHON_DEFAULT = /Library/Frameworks/Python.framework/Versions/3.7/include/python3.7m
 
 TARGET_SERVER = server_main
@@ -18,8 +19,8 @@ TARGET_SCANNER = scanner_main
 $(TARGET_SERVER): $(TARGET_SERVER).o log_service.o constants.o name_tricks.o response_maker.o tcp_server.o udp_server.o edns.o
 	g++ *.o $(ALL_OPT) -o $(TARGET_SERVER) && mv *.o build
 
-$(TARGET_SERVER).o : cpp/main.cpp
-	g++ -c cpp/main.cpp $(ALL_OPT)
+$(TARGET_SERVER).o : cpp/server/server_main.cpp
+	g++ -c cpp/server/server_main.cpp $(ALL_OPT)
 
 tcp_server.o : cpp/server/tcp_server.cpp cpp/server/tcp_connection.cpp 
 	g++ -c cpp/server/tcp_server.cpp cpp/server/tcp_connection.cpp $(ALL_OPT)

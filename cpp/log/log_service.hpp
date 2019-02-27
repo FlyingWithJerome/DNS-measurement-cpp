@@ -53,9 +53,9 @@ BOOST_LOG(lg) \
 BOOST_LOG(lg) \
 << qp.question_id  << std::string(",") << sk.remote_endpoint().address().to_string();}
 
-#define MALFORM_PACKET_UDP_LOG(fn, ep) {logger_type lg(boost::log::keywords::channel=fn); \
+#define UDP_MALFORM_PACKET_LOG(fn, ep) {logger_type lg(boost::log::keywords::channel=fn); \
 BOOST_LOG(lg) \
-<< "Malformed Packet," << ep.address().to_string();}
+<< ep.address().to_string();}
 
 #define EDNS_LOG(fn, qp, ep, edns) {logger_type lg(boost::log::keywords::channel=fn); \
 BOOST_LOG(lg) \

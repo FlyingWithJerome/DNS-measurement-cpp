@@ -7,6 +7,7 @@ constexpr char UDPListener::udp_normal_log_[];
 constexpr char UDPListener::udp_truncate_log_[];
 constexpr char UDPListener::udp_bad_response_log_[];
 
+constexpr uint32_t UDPListener::rcv_buf_size;
 
 UDPListener::UDPListener(boost::asio::io_service& io_service)
 : main_socket_(
@@ -26,6 +27,14 @@ UDPListener::UDPListener(boost::asio::io_service& io_service)
             sizeof(message_pack)
         )
     );
+
+    boost::asio::socket_base::receive_buffer_size option(rcv_buf_size);
+    main_socket_.set_option(option);
+
+    boost::asio::socket_base::receive_buffer_size buf_size;
+    main_socket_.get_option(buf_size);
+
+    std::cout << "[UDP Listener] UDP socket buffer size " << buf_size.value() << std::endl;
 
     main_socket_.non_blocking(true);
 

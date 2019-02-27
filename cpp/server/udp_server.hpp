@@ -2,6 +2,7 @@
 #define UDPSERVER_
 
 #define FROM_UDP_SERVER
+
 #include "server_common.hpp"
 #include "../packet/edns.hpp"
 
@@ -14,6 +15,8 @@ class UDPServer
         static constexpr char udp_tc_log_name_[]     = "udp_truncated_response.log";
         static constexpr char udp_edns_log_name_[]   = "udp_edns_record.log";
         static constexpr char udp_malform_log_name[] = "udp_malform_record.log";
+
+        static constexpr uint32_t rcv_buf_size = 16000000;
     
     private:
         void start_receive();
@@ -23,5 +26,6 @@ class UDPServer
 
         boost::asio::ip::udp::socket   main_socket_;
         boost::asio::ip::udp::endpoint remote_endpoint_;
+
 };
 #endif
