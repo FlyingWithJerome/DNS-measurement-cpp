@@ -8,7 +8,7 @@ BOOST_FLAG = -lboost_thread
 TINS_FLAG = -L/usr/local/lib/libtins.so -ltins
 POSIX_FLAG = -lpthread -lrt
 CPP_OPT = -std=c++11 -g
-OPTIMIZATION = -O3
+OPTIMIZATION = -O3 -static-libstdc++ -static-libgcc
 
 ALL_OPT = $(CPP_OPT) $(OPTIMIZATION) $(BOOST_FLAG) $(BOOST_LOG) $(TINS_FLAG) $(POSIX_FLAG)
 # PYTHON_DEFAULT = /Library/Frameworks/Python.framework/Versions/3.7/include/python3.7m
@@ -17,7 +17,7 @@ TARGET_SERVER = server_main
 TARGET_SCANNER = scanner_main
 
 $(TARGET_SERVER): $(TARGET_SERVER).o log_service.o constants.o name_tricks.o response_maker.o tcp_server.o udp_server.o edns.o
-	g++ *.o $(ALL_OPT) -static-libstdc++ -o $(TARGET_SERVER) && mv *.o build
+	g++ *.o $(ALL_OPT) -o $(TARGET_SERVER) && mv *.o build
 
 $(TARGET_SERVER).o : cpp/server/server_main.cpp
 	g++ -c cpp/server/server_main.cpp $(ALL_OPT)
@@ -57,11 +57,21 @@ udp_scanner.o : cpp/scanner/udp_scanner.cpp
 tcp_scanner.o : cpp/scanner/tcp_scanner.cpp
 	g++ -c cpp/scanner/tcp_scanner.cpp $(ALL_OPT)
 
-udp_scanner_main: udp_scanner_sender.o udp_scanner_listener.o udp_scanner.o name_tricks.o log_service.o
-	g++ udp_scanner_sender.o udp_scanner_listener.o udp_scanner.o log_service.o name_trick.o $(ALL_OPT) -o udp_scanner
+udp_scanner_main: udp_scanner_sender.o udp_scanner_listener.o udp_scanner.o name_tricks.o log_service.o token_bucket.o
+	g++ udp_scanner_sender.o \
+	    udp_scanner_listener.o \
+		udp_scanner.o \
+		log_service.o \
+		name_trick.o \
+		token_bucket.o \
+		$(ALL_OPT) -o \
+		udp_scanner
 
 tcp_scanner_main: tcp_scanner.o log_service.o name_tricks.o 
 	g++ tcp_scanner.o log_service.o name_trick.o -o tcp_scanner $(ALL_OPT)
+
+token_bucket.o: cpp/scanner/token_bucket.cpp
+	g++ -c cpp/scanner/token_bucket.cpp $(CPP_OPT) $(POSIX_FLAG)
 
 scanner: udp_scanner_main tcp_scanner_main
 	mv *.o build

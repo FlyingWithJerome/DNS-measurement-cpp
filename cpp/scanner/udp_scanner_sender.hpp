@@ -21,6 +21,7 @@
 #include <tins/dns.h>
 
 #include "query_commons.hpp"
+#include "token_bucket.hpp"
 
 class raw
 {
@@ -90,11 +91,15 @@ class UDPSender
         static constexpr uint16_t local_port_num  = 2999;
         static constexpr uint16_t remote_port_num = 53;
 
+        static constexpr uint64_t packet_send_rate = 42000;
+
     private:
         void handle_send(const boost::system::error_code&, std::size_t);
 
         std::ifstream file_input_;
         boost::asio::basic_raw_socket<raw> socket_;
+
+        TokenBucket bucket_;
 };
 
 #endif

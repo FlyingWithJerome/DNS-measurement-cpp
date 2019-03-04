@@ -2,10 +2,18 @@
 
 constexpr uint16_t UDPSender::local_port_num;
 constexpr uint16_t UDPSender::remote_port_num;
+constexpr uint64_t UDPSender::packet_send_rate;
 
 UDPSender::UDPSender(const std::string& input_file, boost::asio::io_service& io_service)
-:file_input_(input_file)
-,socket_(io_service)
+: file_input_(
+    input_file
+)
+, socket_(
+    io_service
+)
+, bucket_(
+    packet_send_rate
+)
 {
     socket_.open();
     socket_.non_blocking(true);
@@ -37,17 +45,22 @@ int UDPSender::start_send() noexcept
                 UDPSender::remote_port_num
             );
 
-            std::cout << "[UDP Sender] send to " << inet_ntoa(ip_address) << std::endl;
+            std::cout << "[UDP Sender] send to " << inet_ntoa(ip_address) << "\n";
+            bucket_.consume_one_packet();
 
-            socket_.async_send_to(
+            // socket_.async_send_to(
+            //     boost::asio::buffer(full_packet),
+            //     end_point,
+            //     boost::bind(
+            //         &UDPSender::handle_send,
+            //         this,
+            //         boost::asio::placeholders::error,
+            //         boost::asio::placeholders::bytes_transferred
+            //     )
+            // );
+            socket_.send_to(
                 boost::asio::buffer(full_packet),
-                end_point,
-                boost::bind(
-                    &UDPSender::handle_send,
-                    this,
-                    boost::asio::placeholders::error,
-                    boost::asio::placeholders::bytes_transferred
-                )
+                end_point
             );
         }
         catch(const std::exception& e)
