@@ -11,10 +11,14 @@ TCPScanner::TCPScanner()
     {
         pipe_to_tcp_.reset(
             new boost::interprocess::message_queue(
-                boost::interprocess::open_only,
-                "pipe_to_tcp"
+                boost::interprocess::open_or_create,
+                "pipe_to_tcp",
+                100000,
+                sizeof(message_pack)
             )
         );
+
+        std::cout << "[TCP Scanner] pipe to tcp size: " << pipe_to_tcp_->get_max_msg() << "\n";
 
         for (int index = 0; index < std::thread::hardware_concurrency(); index++)
         {
@@ -25,7 +29,7 @@ TCPScanner::TCPScanner()
     }
     catch (const std::exception& e)
     {
-        std::cerr << e.what() << std::endl;
+        std::cerr << "[TCP Scanner] " << e.what() << std::endl;
     }
 
     init_new_log_file(tcp_normal_log_);
@@ -114,7 +118,7 @@ void TCPScanner::perform_tcp_query(
             ip_address.c_str(), 
             question_id, 
             readable_response.rcode(), 
-            result
+            result.c_str()
         )
 
     }
@@ -272,50 +276,50 @@ int main()
     TCPScanner scanner;
     scanner.service_loop();
 
-    return 0;
-    // boost::asio::ip::tcp::endpoint remote_server_(
-    //     boost::asio::ip::address::from_string("8.8.4.4"),
-    //     53
-    // );
-    // TCPScanner::TCPClient client("8.8.3.3");
+//     return 0;
+//     // boost::asio::ip::tcp::endpoint remote_server_(
+//     //     boost::asio::ip::address::from_string("8.8.4.4"),
+//     //     53
+//     // );
+//     // TCPScanner::TCPClient client("8.8.3.3");
 
-    // client.connect();
+//     // client.connect();
 
-    // if (not client.is_connected)
-    // {
-    //     std::cout << "client had not been connected" << std::endl;
-    //     return 1;
-    // }
+//     // if (not client.is_connected)
+//     // {
+//     //     std::cout << "client had not been connected" << std::endl;
+//     //     return 1;
+//     // }
 
-    // std::string question = "nogizaka.yumi.ipl.eecs.case.edu";
-    // std::vector<uint8_t> packet;
+//     // std::string question = "nogizaka.yumi.ipl.eecs.case.edu";
+//     // std::vector<uint8_t> packet;
 
-    // CRAFT_FULL_QUERY_TCP(question, packet)
+//     // CRAFT_FULL_QUERY_TCP(question, packet)
 
-    // std::vector<uint8_t> response;
+//     // std::vector<uint8_t> response;
 
-    // int send_bytes;
-    // int recv_bytes;
-    // if ((send_bytes = client.send(packet)) < 0)
-    // {
-    //     std::cout << "send error" << std::endl;
-    // }
-    // else
-    // {
-    //     std::cout << "send bytes " << send_bytes << std::endl;
-    // }
+//     // int send_bytes;
+//     // int recv_bytes;
+//     // if ((send_bytes = client.send(packet)) < 0)
+//     // {
+//     //     std::cout << "send error" << std::endl;
+//     // }
+//     // else
+//     // {
+//     //     std::cout << "send bytes " << send_bytes << std::endl;
+//     // }
     
 
-    // if ((recv_bytes = client.receive(response)) < 0)
-    // {
-    //     std::cout << "recv error" << std::endl;
-    // }
-    // else
-    // {
-    //     std::cout << "recv bytes " << recv_bytes << std::endl;
-    // }
+//     // if ((recv_bytes = client.receive(response)) < 0)
+//     // {
+//     //     std::cout << "recv error" << std::endl;
+//     // }
+//     // else
+//     // {
+//     //     std::cout << "recv bytes " << recv_bytes << std::endl;
+//     // }
 
-    // std::cout << "has a response of size " << response.size() << std::endl;
+//     // std::cout << "has a response of size " << response.size() << std::endl;
 
-    // return 0;
+    return 0;
 }

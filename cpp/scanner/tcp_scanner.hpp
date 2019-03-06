@@ -10,6 +10,7 @@
 #include <thread>
 #include <mutex> 
 #include <future>
+#include <memory>
 
 #include <cstring>
 #include <errno.h>
@@ -47,7 +48,7 @@ class TCPScanner
         void inspect_response(const Tins::DNS&, std::string&);
 
         std::vector<std::thread> thread_nest_;
-        boost::scoped_ptr<boost::interprocess::message_queue> pipe_to_tcp_;
+        std::shared_ptr<boost::interprocess::message_queue> pipe_to_tcp_;
 
         typedef struct{
             char ip_address[17];

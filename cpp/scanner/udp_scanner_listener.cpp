@@ -30,7 +30,7 @@ UDPListener::UDPListener(
     boost::asio::socket_base::receive_buffer_size buf_size;
     main_socket_.get_option(buf_size);
 
-    std::cout << "[UDP Listener] UDP socket buffer size " << buf_size.value() << std::endl;
+    std::cout << "[UDP Listener] UDP socket buffer size " << buf_size.value() << "\n";
 
     main_socket_.non_blocking(true);
 
