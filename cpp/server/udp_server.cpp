@@ -60,18 +60,23 @@ void UDPServer::reactor_read(const boost::system::error_code& error_code)
         
         std::size_t available_packet_size = std::min((int)(main_socket_.available()), MAX_SIZE_PACKET_ACCEPT);
 
-        buffer_type new_arrival(new uint8_t[available_packet_size]);
+        buffer_type new_arrival(available_packet_size);
 
         available_packet_size = main_socket_.receive_from(
             boost::asio::buffer(
-                new_arrival.get(), 
-                available_packet_size
+                new_arrival
             ),
             sender_info
         );
 
         handle_receive(new_arrival, available_packet_size, sender_info);
     }
+
+    else
+    {
+        start_receive();
+    }
+    
 }
 
 void UDPServer::handle_receive(const buffer_type& incoming_packet, std::size_t packet_size, const boost::asio::ip::udp::endpoint& sender)
@@ -81,11 +86,9 @@ void UDPServer::handle_receive(const buffer_type& incoming_packet, std::size_t p
 
     try
     {
-        incoming_query = Tins::DNS(incoming_packet.get(), packet_size);
+        incoming_query = Tins::DNS(incoming_packet.data(), packet_size);
         question_name  = incoming_query.queries()[0].dname();
         NameTrick::QueryProperty query_property(question_name);
-
-        buffer_type write_buffer = NULL;
 
         std::cout 
         << "[UDP] Processing " 
@@ -112,7 +115,6 @@ void UDPServer::handle_receive(const buffer_type& incoming_packet, std::size_t p
             boost::bind(
                 &UDPServer::handle_send, 
                 this, 
-                write_buffer,
                 boost::asio::placeholders::error,
                 boost::asio::placeholders::bytes_transferred
             )
@@ -137,7 +139,7 @@ void UDPServer::handle_receive(const buffer_type& incoming_packet, std::size_t p
     start_receive();
 }
 
-void UDPServer::handle_send(buffer_type&, const boost::system::error_code& error_code, std::size_t)
+void UDPServer::handle_send(const boost::system::error_code& error_code, std::size_t)
 {
     if(error_code)
         std::cout << error_code.message() << std::endl;

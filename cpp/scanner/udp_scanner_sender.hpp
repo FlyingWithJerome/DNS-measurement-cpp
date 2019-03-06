@@ -14,9 +14,13 @@
 
 #include <boost/asio.hpp>
 #include <boost/bind.hpp>
+#include <boost/thread.hpp>
+#include <boost/chrono.hpp>
 #include <boost/asio/basic_raw_socket.hpp>
 #include <boost/asio/raw_socket_service.hpp>
 #include <boost/asio/ip/basic_endpoint.hpp>
+#include <boost/interprocess/ipc/message_queue.hpp>
+
 
 #include <tins/dns.h>
 
@@ -84,7 +88,11 @@ class raw
 class UDPSender
 {
     public:
-        UDPSender(const std::string&, boost::asio::io_service&);
+        UDPSender(
+            const std::string&, 
+            boost::asio::io_service&,
+            std::shared_ptr<boost::interprocess::message_queue>&
+        );
 
         int start_send() noexcept;
 
@@ -93,11 +101,18 @@ class UDPSender
 
         static constexpr uint64_t packet_send_rate = 42000;
 
+        static constexpr uint64_t sleep_per_iter   = 2;
+        static constexpr uint16_t sleep_time       = 2;
+
     private:
         void handle_send(const boost::system::error_code&, std::size_t);
 
         std::ifstream file_input_;
         boost::asio::basic_raw_socket<raw> socket_;
+
+        std::shared_ptr<boost::interprocess::message_queue> message_queue_;
+
+        uint32_t num_of_packets_sent;
 
         TokenBucket bucket_;
 };

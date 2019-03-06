@@ -1,6 +1,7 @@
 #include <iostream>
 #include <thread>
 #include <string>
+#include <memory>
 
 #include <boost/asio.hpp>
 #include <boost/thread.hpp>
@@ -8,6 +9,13 @@
 
 #include "udp_scanner_listener.hpp"
 #include "udp_scanner_sender.hpp"
+
+typedef struct{
+    char ip_address[17];
+    char question[70];
+    // char hex_form[12];
+    // unsigned int ip_in_int;
+}message_pack;
 
 int main(int argc, char** argv)
 {
@@ -39,9 +47,20 @@ int main(int argc, char** argv)
 
     std::cout << "[Scanner General] Number of threads (listener+sender): " <<  number_of_threads << "\n";
 
+    boost::interprocess::message_queue::remove("pipe_to_tcp");
+
+    std::shared_ptr<boost::interprocess::message_queue> message_queue = 
+    std::make_shared<boost::interprocess::message_queue>(
+        boost::interprocess::create_only,
+        "pipe_to_tcp",
+        100000,
+        sizeof(message_pack)
+    );
+
+
     boost::thread_group thread_pool_;
-    UDPListener listener(io_service_sender);
-    UDPSender   sender(file_path, io_service_listener);
+    UDPListener listener(io_service_sender, message_queue);
+    UDPSender   sender(file_path, io_service_listener, message_queue);
 
     sender.start_send();
 

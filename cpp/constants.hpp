@@ -37,7 +37,7 @@
 
 
 #include <memory>
-#define buffer_type std::shared_ptr<uint8_t>
+#define buffer_type std::vector<uint8_t>
 
 #define MAX_SIZE_PACKET_ACCEPT 1000
 

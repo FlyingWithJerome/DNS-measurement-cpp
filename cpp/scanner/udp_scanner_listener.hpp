@@ -3,10 +3,11 @@
 
 #include <algorithm>
 #include <vector>
+#include <memory>
 
 #include <boost/asio.hpp>
 #include <boost/bind.hpp>
-#include <boost/scoped_ptr.hpp>
+#include <boost/thread.hpp>
 #include <boost/interprocess/ipc/message_queue.hpp>
 
 #include <tins/dns.h>
@@ -18,7 +19,7 @@
 class UDPListener
 {
     public:
-        UDPListener(boost::asio::io_service&);
+        UDPListener(boost::asio::io_service&, std::shared_ptr<boost::interprocess::message_queue>&);
         UDPListener(const UDPListener&) = delete;
         ~UDPListener();
 
@@ -40,7 +41,7 @@ class UDPListener
         boost::asio::ip::udp::socket   main_socket_;
         boost::asio::ip::udp::endpoint remote_endpoint_;
 
-        boost::scoped_ptr<boost::interprocess::message_queue> pipe_to_tcp_;
+        std::shared_ptr<boost::interprocess::message_queue> pipe_to_tcp_;
 
         typedef struct{
             char ip_address[17];

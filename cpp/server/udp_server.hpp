@@ -22,7 +22,7 @@ class UDPServer
         void start_receive();
         void reactor_read(const boost::system::error_code&);
         void handle_receive(const buffer_type&, std::size_t, const boost::asio::ip::udp::endpoint&);
-        void handle_send(buffer_type&, const boost::system::error_code&, std::size_t);
+        void handle_send(const boost::system::error_code&, std::size_t);
 
         boost::asio::ip::udp::socket   main_socket_;
         boost::asio::ip::udp::endpoint remote_endpoint_;

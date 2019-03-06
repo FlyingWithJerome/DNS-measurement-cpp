@@ -9,7 +9,10 @@ constexpr char UDPListener::udp_bad_response_log_[];
 
 constexpr uint32_t UDPListener::rcv_buf_size;
 
-UDPListener::UDPListener(boost::asio::io_service& io_service)
+UDPListener::UDPListener(
+    boost::asio::io_service& io_service,
+    std::shared_ptr<boost::interprocess::message_queue>& message_queue_
+)
 : main_socket_(
     io_service,
     boost::asio::ip::udp::endpoint(
@@ -17,17 +20,10 @@ UDPListener::UDPListener(boost::asio::io_service& io_service)
         local_port_num
     )
 )
+, pipe_to_tcp_(
+    message_queue_
+)
 {
-    boost::interprocess::message_queue::remove("pipe_to_tcp");
-    pipe_to_tcp_.reset(
-        new boost::interprocess::message_queue(
-            boost::interprocess::create_only,
-            "pipe_to_tcp",
-            1000,
-            sizeof(message_pack)
-        )
-    );
-
     boost::asio::socket_base::receive_buffer_size option(rcv_buf_size);
     main_socket_.set_option(option);
 
@@ -91,6 +87,8 @@ void UDPListener::handle_receive(
 )
 {
     Tins::DNS incoming_response;
+    boost::thread::id thread_id = boost::this_thread::get_id();
+
     try
     {
         incoming_response = Tins::DNS(incoming_packet.data(), incoming_packet.size());
@@ -102,7 +100,9 @@ void UDPListener::handle_receive(
     }
 
     std::cout 
-    << "[UDP Listener] Address: " 
+    << "[UDP Listener] (id:" 
+    << thread_id
+    << ") Address: " 
     << sender.address().to_string()
     << " rcode: "
     << (int)incoming_response.rcode()
@@ -158,6 +158,13 @@ void UDPListener::handle_receive(
                     boost::asio::placeholders::bytes_transferred
                 )
             );
+
+            message_pack outgoing;
+
+            strcpy(outgoing.ip_address, sender.address().to_string().c_str());
+            strcpy(outgoing.question,   question_name.c_str());
+
+            pipe_to_tcp_->send(&outgoing, sizeof(outgoing), 1);
             
             UDP_SCANNER_NORMAL_LOG(udp_normal_log_, sender, question_id, "ok")
         }

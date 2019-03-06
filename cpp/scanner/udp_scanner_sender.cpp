@@ -3,8 +3,14 @@
 constexpr uint16_t UDPSender::local_port_num;
 constexpr uint16_t UDPSender::remote_port_num;
 constexpr uint64_t UDPSender::packet_send_rate;
+constexpr uint64_t UDPSender::sleep_per_iter;
+constexpr uint16_t UDPSender::sleep_time;
 
-UDPSender::UDPSender(const std::string& input_file, boost::asio::io_service& io_service)
+UDPSender::UDPSender(
+    const std::string& input_file, 
+    boost::asio::io_service& io_service,
+    std::shared_ptr<boost::interprocess::message_queue>& message_queue
+)
 : file_input_(
     input_file
 )
@@ -13,11 +19,18 @@ UDPSender::UDPSender(const std::string& input_file, boost::asio::io_service& io_
 )
 , bucket_(
     packet_send_rate
+),
+message_queue_(
+    message_queue
+),
+num_of_packets_sent(
+    0
 )
 {
     socket_.open();
     socket_.non_blocking(true);
 
+    std::cout << "[UDP Sender] message queue size: " << message_queue_->get_max_msg() << "\n";
 }
 
 int UDPSender::start_send() noexcept
@@ -58,10 +71,20 @@ int UDPSender::start_send() noexcept
             //         boost::asio::placeholders::bytes_transferred
             //     )
             // );
+
+            if (num_of_packets_sent % sleep_per_iter == 0 and num_of_packets_sent)
+            {
+                boost::thread::id thread_id = boost::this_thread::get_id();
+                std::cout << "[UDP Sender] going to sleep for 2 seconds (id:" << thread_id << ")\n";
+                boost::this_thread::sleep_for(boost::chrono::seconds(sleep_time));
+                std::cout << "[UDP Sender] sender waked up (id:" << thread_id << ")\n";
+            }
+            
             socket_.send_to(
                 boost::asio::buffer(full_packet),
                 end_point
             );
+            num_of_packets_sent++;
         }
         catch(const std::exception& e)
         {
