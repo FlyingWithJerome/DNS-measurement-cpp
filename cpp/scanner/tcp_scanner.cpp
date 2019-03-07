@@ -20,10 +20,10 @@ TCPScanner::TCPScanner()
 
         std::cout << "[TCP Scanner] pipe to tcp size: " << pipe_to_tcp_->get_max_msg() << "\n";
 
-        for (int index = 0; index < std::thread::hardware_concurrency(); index++)
+        for (int index = 0; index < std::thread::hardware_concurrency() - 1; index++)
         {
             thread_pool_.create_thread(
-                boost::bind(&boost::asio::io_service::run, &io_service_)
+                [&](){ io_service_.run(); }
             );
         }
     }
@@ -37,30 +37,34 @@ TCPScanner::TCPScanner()
 
 int TCPScanner::service_loop() noexcept
 {
-    try
+
+    while (true)
     {
-        while (true)
+        message_pack  empty;
+        unsigned long recv_size = 0;
+        unsigned int priority = 1;
+
+        try
         {
-            message_pack  empty;
-            unsigned long recv_size;
-            unsigned int priority = 1;
 
-            pipe_to_tcp_->receive(&empty, sizeof(message_pack), recv_size, priority);
+            bool recv_status = pipe_to_tcp_->try_receive(&empty, sizeof(message_pack), recv_size, priority);
 
-            io_service_.post(
-                boost::bind(
-                    &TCPScanner::perform_tcp_query,
-                    this,
-                    std::string(empty.ip_address),
-                    std::string(empty.question)
-                )
-            );
+            if(recv_size and recv_status)
+            {
+                io_service_.post(
+                    boost::bind(
+                        &TCPScanner::perform_tcp_query,
+                        std::string(empty.ip_address),
+                        std::string(empty.question)
+                    )
+                );
+            }
         }
-    }
-    catch(const std::exception& e)
-    {
-        std::cerr << e.what() << '\n';
+        catch(...)
+        {
+        }
     } 
+    thread_pool_.join_all();
 }
 
 void TCPScanner::perform_tcp_query(
@@ -124,7 +128,7 @@ void TCPScanner::perform_tcp_query(
     }
     catch (...)
     {
-        std::cout << "[TCP Scanner] " << ip_address << " had malformed packet" <<  "\n";
+        std::cout << "[TCP Scanner] " << ip_address << " had malformed packet\n";
         // TCP_SCANNER_NORMAL_LOG(
         //     tcp_normal_log_, 
         //     ip_address.c_str(), 
@@ -258,7 +262,7 @@ int TCPScanner::TCPClient::receive(std::vector<uint8_t>& packet)
         }
         else if (recv_size < 0)
         {
-            std::cout << strerror(errno) << std::endl;
+            std::cout << "[TCP Scanner] Error recv: " << strerror(errno) << std::endl;
             return -1;
         }
         return 0;
@@ -273,9 +277,10 @@ TCPScanner::TCPClient::~TCPClient()
 
 int main()
 {
+    std::cout << "[TCP Scanner] TCP Scanner started\n";
     TCPScanner scanner;
     scanner.service_loop();
-
+    std::cout << "[TCP Scanner] TCP Scanner exit;\n";
 //     return 0;
 //     // boost::asio::ip::tcp::endpoint remote_server_(
 //     //     boost::asio::ip::address::from_string("8.8.4.4"),

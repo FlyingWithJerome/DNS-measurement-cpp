@@ -3,6 +3,9 @@
 #include <string>
 #include <memory>
 
+#include <unistd.h>
+#include <sys/wait.h>
+
 #include <boost/asio.hpp>
 #include <boost/thread.hpp>
 #include <boost/program_options.hpp>
@@ -10,13 +13,12 @@
 #include "udp_scanner_listener.hpp"
 #include "udp_scanner_sender.hpp"
 #include "tcp_scanner.hpp"
+#include "message_queue_packet.hpp"
 
-typedef struct{
-    char ip_address[17];
-    char question[70];
-    // char hex_form[12];
-    // unsigned int ip_in_int;
-}message_pack;
+int launch_udp_scanners()
+{
+
+}
 
 int main(int argc, char** argv)
 {
@@ -42,6 +44,20 @@ int main(int argc, char** argv)
 
     boost::interprocess::message_queue::remove("pipe_to_tcp");
 
+
+    // pid_t process_id = fork();
+
+    // if (process_id == 0)
+    // {
+    //     TCPScanner scanner;
+    //     scanner.service_loop();
+
+    //     exit(0);
+    // }
+
+    // else
+    // {
+    
     std::shared_ptr<boost::interprocess::message_queue> message_queue = 
     std::make_shared<boost::interprocess::message_queue>(
         boost::interprocess::open_or_create,
@@ -77,6 +93,13 @@ int main(int argc, char** argv)
     // sender.start_send();
 
     thread_pool_.join_all();
+
+    //     int status;
+
+    //     waitpid(process_id, &status, 0);
+
+    //     exit(0);
+    // }
 
     return 0;
 }

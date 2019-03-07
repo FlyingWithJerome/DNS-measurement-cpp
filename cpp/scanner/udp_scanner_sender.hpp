@@ -99,10 +99,10 @@ class UDPSender
         static constexpr uint16_t local_port_num  = 2999;
         static constexpr uint16_t remote_port_num = 53;
 
-        static constexpr uint64_t packet_send_rate = 42000;
+        static constexpr uint64_t packet_send_rate = 40000;
 
-        static constexpr uint64_t sleep_per_iter   = 2;
-        static constexpr uint16_t sleep_time       = 2;
+        static constexpr uint64_t sleep_per_iter   = 200*1000;
+        static constexpr uint16_t sleep_time       = 20;
 
     private:
         void handle_send(const boost::system::error_code&, std::size_t);

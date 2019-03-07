@@ -77,9 +77,9 @@ int UDPSender::start_send() noexcept
                 boost::thread::id thread_id = boost::this_thread::get_id();
                 std::cout << "[UDP Sender] going to sleep for 2 seconds (id:" << thread_id << ")\n";
 
-                // boost::asio::deadline_timer timer(socket_.get_io_service());
-                // timer.expires_from_now(boost::posix_time::seconds(sleep_time));
-                // timer.wait();
+                boost::asio::deadline_timer timer(socket_.get_io_service());
+                timer.expires_from_now(boost::posix_time::seconds(sleep_time));
+                timer.wait();
                 std::cout << "[UDP Sender] sender waked up (id:" << thread_id << ")\n";
             }
             

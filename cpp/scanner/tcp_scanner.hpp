@@ -9,7 +9,6 @@
 #include <vector>
 #include <thread>
 #include <mutex> 
-#include <future>
 #include <memory>
 
 #include <cstring>
@@ -28,6 +27,7 @@
 #include "../log/log_service.hpp"
 #include "../packet/name_trick.hpp"
 #include "query_commons.hpp"
+#include "message_queue_packet.hpp"
 
 class TCPScanner
 {
@@ -37,25 +37,18 @@ class TCPScanner
         ~TCPScanner();
         int service_loop() noexcept;
 
-        static constexpr char tcp_normal_log_[] = "tcp_scanner_normal.log";
-
-    private:
-        void perform_tcp_query(
+        static void perform_tcp_query(
             std::string,
             std::string
         );
 
-        void inspect_response(const Tins::DNS&, std::string&);
+        static void inspect_response(const Tins::DNS&, std::string&);
 
+        static constexpr char tcp_normal_log_[] = "tcp_scanner_normal.log";
+
+    private:
         std::vector<std::thread> thread_nest_;
         std::shared_ptr<boost::interprocess::message_queue> pipe_to_tcp_;
-
-        typedef struct{
-            char ip_address[17];
-            char question[70];
-            // char hex_form[12];
-            // unsigned int ip_in_int;
-        }message_pack;
 
         boost::asio::io_service io_service_;
         boost::thread_group     thread_pool_;

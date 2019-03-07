@@ -1,5 +1,6 @@
 udp_scanner() {
-    ./udp_scanner --file_path=cpp/scanner/address_cpy.txt
+    ./udp_scanner --file_path=/home/jxm959/ip_shuffle.txt
+    # ./udp_scanner --file_path=cpp/scanner/address_cpy.txt
 }
 
 tcp_scanner() {

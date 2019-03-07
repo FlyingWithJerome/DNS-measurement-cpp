@@ -15,6 +15,7 @@
 #include "../log/log_service.hpp"
 #include "../packet/name_trick.hpp"
 #include "query_commons.hpp"
+#include "message_queue_packet.hpp"
 
 class UDPListener
 {
@@ -42,13 +43,6 @@ class UDPListener
         boost::asio::ip::udp::endpoint remote_endpoint_;
 
         std::shared_ptr<boost::interprocess::message_queue> pipe_to_tcp_;
-
-        typedef struct{
-            char ip_address[17];
-            char question[70];
-            // char hex_form[12];
-            // unsigned int ip_in_int;
-        }message_pack;
 };
 
 #endif
