@@ -7,9 +7,9 @@ constexpr uint64_t UDPSender::sleep_per_iter;
 constexpr uint16_t UDPSender::sleep_time;
 
 UDPSender::UDPSender(
-    const std::string& input_file, 
     boost::asio::io_service& io_service,
-    std::shared_ptr<boost::interprocess::message_queue>& message_queue
+    std::shared_ptr<boost::interprocess::message_queue>& message_queue,
+    const std::string& input_file
 )
 : file_input_(
     input_file

@@ -55,6 +55,11 @@ void UDPListener::start_receive()
     );
 }
 
+boost::asio::ip::udp::socket& UDPListener::get_socket()
+{
+    return main_socket_;
+}
+
 void UDPListener::reactor_read(const boost::system::error_code& error_code)
 {
     if(error_code)

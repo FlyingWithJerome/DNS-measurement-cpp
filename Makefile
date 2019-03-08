@@ -57,7 +57,10 @@ udp_scanner.o : cpp/scanner/udp_scanner.cpp
 tcp_scanner.o : cpp/scanner/tcp_scanner.cpp
 	g++ -c cpp/scanner/tcp_scanner.cpp $(ALL_OPT)
 
-udp_scanner_main: udp_scanner_sender.o udp_scanner_listener.o udp_scanner.o name_tricks.o log_service.o token_bucket.o tcp_scanner.o
+monitor.o : cpp/scanner/monitor.cpp
+	g++ -c cpp/scanner/monitor.cpp $(ALL_OPT)
+
+udp_scanner_main: udp_scanner_sender.o udp_scanner_listener.o udp_scanner.o name_tricks.o log_service.o token_bucket.o tcp_scanner.o monitor.o
 	g++ udp_scanner_sender.o \
 	    udp_scanner_listener.o \
 		udp_scanner.o \
@@ -65,6 +68,7 @@ udp_scanner_main: udp_scanner_sender.o udp_scanner_listener.o udp_scanner.o name
 		name_trick.o \
 		token_bucket.o \
 		tcp_scanner.o \
+		monitor.o \
 		$(ALL_OPT) -o \
 		udp_scanner
 

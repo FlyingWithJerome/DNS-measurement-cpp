@@ -17,6 +17,7 @@
 #include "udp_scanner_sender.hpp"
 #include "tcp_scanner.hpp"
 #include "message_queue_packet.hpp"
+#include "monitor.hpp"
 
 static pid_t process_id;
 
@@ -52,6 +53,7 @@ interruption_handler.sa_flags   = 0; \
 sigemptyset(&interruption_handler.sa_mask); \
 sigaction(SIGINT, &interruption_handler, nullptr);
 
+
 int launch_udp_scanners(
     std::string&    file_path,
     std::shared_ptr<msg_q>& mq
@@ -66,14 +68,16 @@ int launch_udp_scanners(
     std::cout << "[Scanner General] Number of threads (listener+sender): " <<  number_of_threads << "\n";
 
     boost::thread_group thread_pool_;
-    UDPSender   sender(file_path, io_service_sender, mq);
+    UDPSender   sender(io_service_sender,     mq, file_path);
     UDPListener listener(io_service_listener, mq);
+
+    BufferMonitor monitor(mq, listener.get_socket());
 
     thread_pool_.create_thread(
         [&sender](){ sender.start_send(); }
     );
 
-    for(unsigned int index = 0; index < number_of_threads - 1; index++)
+    for(unsigned int index = 0; index < number_of_threads - 2; index++)
     {
         thread_pool_.create_thread(
             [&io_service_listener](){ io_service_listener.run(); }
@@ -90,7 +94,7 @@ int main(int argc, char** argv)
     option_set.add_options()
         ("help", "Help message")
         ("file_path", boost::program_options::value<std::string>(), "input path of the file")
-        ("send_rate", boost::program_options::value<uint32_t>(), "packet send rate")
+        ("send_rate", boost::program_options::value<uint32_t>(),    "packet send rate")
     ;
 
     boost::program_options::variables_map variables_map_;
@@ -113,12 +117,11 @@ int main(int argc, char** argv)
     std::string file_path = variables_map_["file_path"].as<std::string>();
     /* ----------- Parse User Inputs END ----------- */
 
-
     boost::interprocess::message_queue::remove("pipe_to_tcp");
 
     std::shared_ptr<msg_q> message_queue = 
     std::make_shared<msg_q>(
-        boost::interprocess::open_or_create,
+        boost::interprocess::create_only,
         "pipe_to_tcp",
         100000,
         sizeof(message_pack)
@@ -129,6 +132,7 @@ int main(int argc, char** argv)
     if (process_id == 0)
     {
         REGISTER_INTERRUPTION(child)
+
         TCPScanner scanner;
         scanner.service_loop();
         exit(0);
@@ -137,7 +141,9 @@ int main(int argc, char** argv)
     else
     {
         REGISTER_INTERRUPTION(parent)
+
         launch_udp_scanners(file_path, message_queue);
+
         int status;
         waitpid(process_id, &status, 0);
         exit(0);
