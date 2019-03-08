@@ -2,7 +2,8 @@
 
 BufferMonitor::BufferMonitor(
     std::shared_ptr<msg_q> message_queue,
-    boost::asio::ip::udp::socket& listening_socket
+    boost::asio::ip::udp::socket& listening_socket,
+    std::atomic<bool>& sender_should_wait
 )
 : message_queue_(
     message_queue
@@ -12,6 +13,9 @@ BufferMonitor::BufferMonitor(
 )
 , msg_queue_size_(
     message_queue->get_max_msg()
+)
+, sender_should_wait_(
+    sender_should_wait
 )
 {
     boost::asio::socket_base::receive_buffer_size recv_size;
@@ -47,8 +51,9 @@ bool BufferMonitor::check_buffer()
 
 void BufferMonitor::start_monitor()
 {
-    // while (true)
-    // {
-    //     if (not check_buffer())
-    // }
+    while (true)
+    {
+        sender_should_wait_ = not check_buffer();
+        boost::this_thread::sleep_for(boost::chrono::milliseconds(10));
+    }
 }

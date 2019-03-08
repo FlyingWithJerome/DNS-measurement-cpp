@@ -1,3 +1,4 @@
+#include <atomic>
 #include <iostream>
 #include <thread>
 #include <string>
@@ -67,11 +68,18 @@ int launch_udp_scanners(
 
     std::cout << "[Scanner General] Number of threads (listener+sender): " <<  number_of_threads << "\n";
 
+    std::atomic<bool> sender_wait{false};
+
     boost::thread_group thread_pool_;
-    UDPSender   sender(io_service_sender,     mq, file_path);
+
+    UDPSender   sender(io_service_sender,     mq, file_path, sender_wait);
     UDPListener listener(io_service_listener, mq);
 
-    BufferMonitor monitor(mq, listener.get_socket());
+    BufferMonitor monitor(mq, listener.get_socket(), sender_wait);
+
+    thread_pool_.create_thread(
+        [&monitor](){ monitor.start_monitor(); }
+    );
 
     thread_pool_.create_thread(
         [&sender](){ sender.start_send(); }

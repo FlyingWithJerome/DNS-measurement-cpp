@@ -9,7 +9,8 @@ constexpr uint16_t UDPSender::sleep_time;
 UDPSender::UDPSender(
     boost::asio::io_service& io_service,
     std::shared_ptr<boost::interprocess::message_queue>& message_queue,
-    const std::string& input_file
+    const std::string& input_file,
+    const std::atomic<bool>& wait_signal
 )
 : file_input_(
     input_file
@@ -19,12 +20,15 @@ UDPSender::UDPSender(
 )
 , bucket_(
     packet_send_rate
-),
-message_queue_(
+)
+, message_queue_(
     message_queue
-),
-num_of_packets_sent(
+)
+, num_of_packets_sent(
     0
+)
+, sender_wait_signal_(
+    wait_signal
 )
 {
     socket_.open();
@@ -72,7 +76,7 @@ int UDPSender::start_send() noexcept
             //     )
             // );
 
-            if (num_of_packets_sent % sleep_per_iter == 0 and num_of_packets_sent)
+            if (sender_wait_signal_)
             {
                 boost::thread::id thread_id = boost::this_thread::get_id();
                 std::cout << "[UDP Sender] going to sleep for 2 seconds (id:" << thread_id << ")\n";
