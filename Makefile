@@ -64,6 +64,7 @@ udp_scanner_main: udp_scanner_sender.o udp_scanner_listener.o udp_scanner.o name
 		log_service.o \
 		name_trick.o \
 		token_bucket.o \
+		tcp_scanner.o \
 		$(ALL_OPT) -o \
 		udp_scanner
 
@@ -73,7 +74,7 @@ tcp_scanner_main: tcp_scanner.o log_service.o name_tricks.o
 token_bucket.o: cpp/scanner/token_bucket.cpp
 	g++ -c cpp/scanner/token_bucket.cpp $(CPP_OPT) $(POSIX_FLAG)
 
-scanner: udp_scanner_main tcp_scanner_main
+scanner: udp_scanner_main
 	mv *.o build
 
 # TARGET = sender
