@@ -8,7 +8,6 @@
 #include <iostream>
 #include <vector>
 #include <thread>
-#include <mutex> 
 #include <memory>
 
 #include <cstring>
@@ -37,10 +36,7 @@ class TCPScanner
         ~TCPScanner();
         int service_loop() noexcept;
 
-        static void perform_tcp_query(
-            std::string,
-            std::string
-        );
+        static void perform_tcp_query(const std::string&, const std::string&);
 
         static void inspect_response(const Tins::DNS&, std::string&);
 

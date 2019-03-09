@@ -64,8 +64,8 @@ int TCPScanner::service_loop() noexcept
 }
 
 void TCPScanner::perform_tcp_query(
-    std::string ip_address,
-    std::string question
+    const std::string& ip_address,
+    const std::string& question
 )
 {
     TCPClient client(ip_address.c_str());
@@ -168,6 +168,7 @@ void TCPScanner::inspect_response(const Tins::DNS& response, std::string& result
 
 TCPScanner::~TCPScanner()
 {
+    work.reset();
     io_service_.stop();
     thread_pool_.join_all();
 }
