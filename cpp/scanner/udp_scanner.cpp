@@ -20,23 +20,25 @@
 #include "message_queue_packet.hpp"
 #include "monitor.hpp"
 
-static pid_t process_id;
-
 typedef boost::interprocess::message_queue msg_q;
+
+void keyboard_interruption_handler_child(int);
+void keyboard_interruption_handler_parent(int);
+
+int launch_udp_scanners(const std::string&, std::shared_ptr<msg_q>&);
 
 void keyboard_interruption_handler_child(int signal)
 {
-    std::cout << "[Scanner General] Going to Exit...\n";
+    std::cout << "[Scanner General] Going to Exit (Child)...\n";
     std::exit(1);
 }
 
 void keyboard_interruption_handler_parent(int signal)
 {
-    std::cout << "[Scanner General] Going to Exit...\n";
+    std::cout << "[Scanner General] Going to Exit (Parent)...\n";
 
     int status;
-    std::cout << "[Scanner General] Waiting for child @ " << process_id << std::endl;
-    waitpid(process_id, &status, 0);
+    waitpid(-1, &status, 0);
     if (WIFEXITED(status))
     {
         std::cout << "[Scanner General] Child Exit Status: " << WEXITSTATUS(status) << std::endl;
@@ -56,7 +58,7 @@ sigaction(SIGINT, &interruption_handler, nullptr);
 
 
 int launch_udp_scanners(
-    std::string&    file_path,
+    const std::string&      file_path,
     std::shared_ptr<msg_q>& mq
 )
 {
@@ -119,7 +121,7 @@ int main(int argc, char** argv)
 
     std::uint8_t send_rate = 
     variables_map_.count("send_rate") > 0          ? 
-    variables_map_["send_rate"].as<std::uint8_t>() : 
+    variables_map_["send_rate"].as<std::uint32_t>() : 
     0;
 
     std::string file_path = variables_map_["file_path"].as<std::string>();
@@ -135,7 +137,7 @@ int main(int argc, char** argv)
         sizeof(message_pack)
     );
 
-    process_id = fork();
+    pid_t process_id = fork();
 
     if (process_id == 0)
     {
@@ -145,7 +147,6 @@ int main(int argc, char** argv)
         scanner.service_loop();
         exit(0);
     }
-
     else
     {
         REGISTER_INTERRUPTION(parent)

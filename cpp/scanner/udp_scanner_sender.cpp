@@ -10,7 +10,7 @@ UDPSender::UDPSender(
     boost::asio::io_service& io_service,
     std::shared_ptr<boost::interprocess::message_queue>& message_queue,
     const std::string& input_file,
-    const std::atomic<bool>& wait_signal
+    std::atomic<bool>& wait_signal
 )
 : file_input_(
     input_file
@@ -79,7 +79,7 @@ int UDPSender::start_send() noexcept
             if (sender_wait_signal_)
             {
                 boost::thread::id thread_id = boost::this_thread::get_id();
-                std::cout << "[UDP Sender] going to sleep for 2 seconds (id:" << thread_id << ")\n";
+                std::cout << "[UDP Sender] going to sleep for " << sleep_time << "seconds (id:" << thread_id << ")\n";
 
                 boost::asio::deadline_timer timer(socket_.get_io_service());
                 timer.expires_from_now(boost::posix_time::seconds(sleep_time));

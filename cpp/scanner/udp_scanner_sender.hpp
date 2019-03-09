@@ -92,7 +92,7 @@ class UDPSender
             boost::asio::io_service&,
             std::shared_ptr<boost::interprocess::message_queue>&,
             const std::string&,
-            const std::atomic<bool>&
+            std::atomic<bool>&
         );
 
         int start_send() noexcept;
@@ -114,7 +114,7 @@ class UDPSender
         std::shared_ptr<boost::interprocess::message_queue> message_queue_;
 
         uint32_t num_of_packets_sent;
-        const std::atomic<bool>& sender_wait_signal_;
+        std::atomic<bool>& sender_wait_signal_;
 
         TokenBucket bucket_;
 };

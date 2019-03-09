@@ -2,3 +2,4 @@ mq_*
 *.py
 *.txt
 *.gch
+*.o
