@@ -92,9 +92,7 @@ void TCPScanner::perform_tcp_query(
 
     client.send(full_packet);
     
-    int recv_size = client.receive(response_packet);
-
-    if (recv_size <= 0)
+    if (client.receive(response_packet) <= 0)
     {
         TCP_SCANNER_NORMAL_LOG(
             tcp_normal_log_, 
@@ -108,7 +106,7 @@ void TCPScanner::perform_tcp_query(
 
     try
     {
-        Tins::DNS readable_response(response_packet.data()+2, recv_size-2);
+        Tins::DNS readable_response(response_packet.data()+2, response_packet.size()-2);
 
         std::cout << "[TCP Scanner] packet name: " << readable_response.answers()[0].dname() << "\n";
 
@@ -240,7 +238,7 @@ int TCPScanner::TCPClient::send(const std::vector<uint8_t>& packet) noexcept
 
 int TCPScanner::TCPClient::receive(std::vector<uint8_t>& packet)
 {
-    packet.reserve(3000);
+    packet.resize(3000);
 
     int retval = select(socket_fd+1, &socket_set, nullptr, nullptr, &read_timeout);
     
@@ -248,12 +246,13 @@ int TCPScanner::TCPClient::receive(std::vector<uint8_t>& packet)
     {
         int recv_size = ::recv(
             socket_fd,
-            packet.data(),
+            &packet[0],
             3000,
             0
         );
         if (recv_size > 0)
         {
+            packet.shrink_to_fit();
             return recv_size;
         }
         else if (recv_size < 0)
