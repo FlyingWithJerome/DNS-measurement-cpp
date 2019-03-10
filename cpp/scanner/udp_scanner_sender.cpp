@@ -95,7 +95,7 @@ int UDPSender::start_send() noexcept
         }
         catch(const std::exception& e)
         {
-            std::cerr << "message from loop " << e.what() << '\n';
+            std::cerr << "[UDP Scanner] message from loop " << e.what() << '\n';
         }
         
     }

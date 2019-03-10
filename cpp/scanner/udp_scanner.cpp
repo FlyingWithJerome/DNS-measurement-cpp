@@ -8,6 +8,7 @@
 #include <sys/wait.h>
 
 #include <signal.h>
+#include <cstring>
 #include <cstdlib>
 
 #include <boost/asio.hpp>
@@ -43,9 +44,24 @@ void keyboard_interruption_handler_parent(int signal)
     {
         std::cout << "[Scanner General] Child Exit Status: " << WEXITSTATUS(status) << std::endl;
     }
+    else if (WIFSIGNALED(status))
+    {
+        std::cout 
+        << "[Scanner General] Child Does not exit normally (signaled); signaled with "
+        << ::strsignal(WTERMSIG(status))
+        << "\n";
+    }
+    else if (WIFSTOPPED(status))
+    {
+        std::cout << "[Scanner General] Child Does not exit normally (stopped)\n";
+    }
+    else if (WIFCONTINUED(status))
+    {
+        std::cout << "[Scanner General] Child Does not exit normally (continued)\n";
+    }
     else
     {
-        std::cout << "[Scanner General] Child Does not exit normally\n";
+        std::cout << "[Scanner General] Child Does not exit normally (unknown status)\n";
     }
     std::exit(1);
 }
@@ -138,6 +154,12 @@ int main(int argc, char** argv)
     );
 
     pid_t process_id = fork();
+
+    if (process_id == -1)
+    {
+        std::cout << "[Scanner General] Fork failed, exiting...\n";
+        std::exit(EXIT_FAILURE);
+    }
 
     if (process_id == 0)
     {
