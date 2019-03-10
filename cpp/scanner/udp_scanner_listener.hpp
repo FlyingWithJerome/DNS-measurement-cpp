@@ -17,6 +17,11 @@
 #include "query_commons.hpp"
 #include "message_queue_packet.hpp"
 
+#define SEND_TO_TCP_SCANNER(q_name) message_pack outgoing; \
+strcpy(outgoing.ip_address, sender.address().to_string().c_str()); \
+strcpy(outgoing.question,   (q_name).c_str()); \
+pipe_to_tcp_->send(&outgoing, sizeof(outgoing), 1);
+
 class UDPListener
 {
     public:

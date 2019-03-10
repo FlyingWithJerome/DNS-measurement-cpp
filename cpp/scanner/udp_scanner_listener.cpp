@@ -105,7 +105,7 @@ void UDPListener::handle_receive(
     }
 
     std::cout 
-    << "[UDP Listener] (id:" 
+    << "[UDP Listener] (thread id:" 
     << thread_id
     << ") Address: " 
     << sender.address().to_string()
@@ -164,13 +164,7 @@ void UDPListener::handle_receive(
                 )
             );
 
-            message_pack outgoing;
-
-            strcpy(outgoing.ip_address, sender.address().to_string().c_str());
-            strcpy(outgoing.question,   question_name.c_str());
-
-            pipe_to_tcp_->send(&outgoing, sizeof(outgoing), 1);
-            
+            SEND_TO_TCP_SCANNER(question_name)
             UDP_SCANNER_NORMAL_LOG(udp_normal_log_, sender, question_id, "ok")
         }
         else
@@ -178,12 +172,7 @@ void UDPListener::handle_receive(
             if (incoming_response.truncated()) // is a jumbo code and is truncated (as our expectation)
             {
                 // send to tcp scanner
-                message_pack outgoing;
-
-                strcpy(outgoing.ip_address, sender.address().to_string().c_str());
-                strcpy(outgoing.question,   question_name.c_str());
-
-                pipe_to_tcp_->send(&outgoing, sizeof(outgoing), 1);
+                SEND_TO_TCP_SCANNER(question_name)
                 UDP_SCANNER_TRUNCATE_LOG(udp_truncate_log_, sender, question_id, "tc_ok")
             }
             else // is a jumbo query but is not truncated
