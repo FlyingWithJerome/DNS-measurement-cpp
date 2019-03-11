@@ -58,8 +58,8 @@ int UDPSender::start_send() noexcept
 
             packet_factory_.make_packet(
                 PacketTypes::RAW_QUERY,
-                full_packet,
-                packet_config_
+                packet_config_,
+                full_packet
             );
 
             struct in_addr ip_address;

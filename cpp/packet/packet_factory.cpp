@@ -4,24 +4,21 @@ constexpr size_t PacketFactory::udp_header_size;
 constexpr size_t PacketFactory::tcp_dns_size_shift;
 
 void PacketFactory::make_packet(
-    const PacketTypes& packet_type,  
-    std::vector<uint8_t>& packet_to_be_filled, 
-    const packet_configuration& packet_config
+    const PacketTypes& packet_type,
+    const packet_configuration& packet_config,
+    std::vector<uint8_t>& packet_to_be_filled
 )
 {
     switch (packet_type)
     {
         case UDP_QUERY:
-            return make_udp_query(packet_to_be_filled, packet_config);
-            break;
+            return make_udp_query(packet_config, packet_to_be_filled);
         
         case TCP_QUERY:
-            return make_tcp_query(packet_to_be_filled, packet_config);
-            break;
+            return make_tcp_query(packet_config, packet_to_be_filled);
 
         case RAW_QUERY:
-            return make_raw_query(packet_to_be_filled, packet_config);
-            break;
+            return make_raw_query(packet_config, packet_to_be_filled);
 
         default:
             break;
@@ -30,8 +27,8 @@ void PacketFactory::make_packet(
 
 
 void PacketFactory::make_udp_query(
-    std::vector<uint8_t>& packet_to_be_filled, 
-    const packet_configuration& packet_config
+    const packet_configuration& packet_config,
+    std::vector<uint8_t>& packet_to_be_filled
 )
 {
     Tins::DNS query;
@@ -48,8 +45,8 @@ void PacketFactory::make_udp_query(
 }
 
 void PacketFactory::make_tcp_query(
-    std::vector<uint8_t>& packet_to_be_filled, 
-    const packet_configuration& packet_config
+    const packet_configuration& packet_config,
+    std::vector<uint8_t>& packet_to_be_filled
 )
 {
     Tins::DNS query;
@@ -76,8 +73,8 @@ void PacketFactory::make_tcp_query(
 }
 
 void PacketFactory::make_raw_query(
-    std::vector<uint8_t>& packet_to_be_filled, 
-    const packet_configuration& packet_config
+    const packet_configuration& packet_config,
+    std::vector<uint8_t>& packet_to_be_filled
 )
 {
     Tins::DNS query;

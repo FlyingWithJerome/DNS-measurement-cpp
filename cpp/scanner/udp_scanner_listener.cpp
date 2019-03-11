@@ -155,8 +155,8 @@ void UDPListener::handle_receive(
 
             packet_factory_.make_packet(
                 PacketTypes::UDP_QUERY,
-                full_packet,
-                packet_config_
+                packet_config_,
+                full_packet
             );
 
             main_socket_.async_send_to(

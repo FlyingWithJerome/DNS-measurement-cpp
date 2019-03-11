@@ -28,15 +28,15 @@ typedef struct{
 class PacketFactory
 {
     public:
-        void make_packet(const PacketTypes&, std::vector<uint8_t>&, const packet_configuration&);
+        void make_packet(const PacketTypes&, const packet_configuration&, std::vector<uint8_t>&);
 
         static constexpr size_t udp_header_size    = 8;
         static constexpr size_t tcp_dns_size_shift = 2;
 
     private:
-        void make_udp_query(std::vector<uint8_t>&, const packet_configuration&);
-        void make_tcp_query(std::vector<uint8_t>&, const packet_configuration&);
-        void make_raw_query(std::vector<uint8_t>&, const packet_configuration&);
+        void make_udp_query(const packet_configuration&, std::vector<uint8_t>&);
+        void make_tcp_query(const packet_configuration&, std::vector<uint8_t>&);
+        void make_raw_query(const packet_configuration&, std::vector<uint8_t>&);
 };
 
 #endif

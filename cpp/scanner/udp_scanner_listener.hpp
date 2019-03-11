@@ -34,8 +34,8 @@ class UDPListener
         static constexpr uint16_t local_port_num  = 2999;
         static constexpr uint16_t remote_port_num = 53;
 
-        static constexpr char udp_normal_log_[] = "udp_scanner_normal.log";
-        static constexpr char udp_truncate_log_[] = "udp_scanner_truncate.log";
+        static constexpr char udp_normal_log_[]       = "udp_scanner_normal.log";
+        static constexpr char udp_truncate_log_[]     = "udp_scanner_truncate.log";
         static constexpr char udp_bad_response_log_[] = "udp_scanner_bad_response.log";
 
         static constexpr uint32_t rcv_buf_size = 16 * 1000 * 1000; //16 mega bytes, BIND9 uses this size

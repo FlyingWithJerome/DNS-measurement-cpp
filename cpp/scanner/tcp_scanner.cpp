@@ -51,6 +51,7 @@ int TCPScanner::service_loop() noexcept
                 io_service_.post(
                     boost::bind(
                         &TCPScanner::perform_tcp_query,
+                        this,
                         std::string(empty.ip_address),
                         std::string(empty.question)
                     )
@@ -58,7 +59,7 @@ int TCPScanner::service_loop() noexcept
             }
             else
             {
-                boost::this_thread::sleep_for(boost::chrono::milliseconds(2));
+                boost::this_thread::sleep_for(boost::chrono::microseconds(50));
             }
         }
         catch(...)
@@ -92,7 +93,16 @@ void TCPScanner::perform_tcp_query(
     std::vector<uint8_t> full_packet;
     std::vector<uint8_t> response_packet;
 
-    CRAFT_FULL_QUERY_TCP(question, full_packet)
+    packet_configuration packet_config;
+    packet_config.id     = 1338;
+    packet_config.q_name = question;
+
+    packet_factory_.make_packet(
+        PacketTypes::TCP_QUERY,
+        packet_config,
+        full_packet
+    );
+    // CRAFT_FULL_QUERY_TCP(question, full_packet)
 
     client.send(full_packet);
     
