@@ -19,7 +19,7 @@
 #include <memory>
 
 #define NAMETRICK_EXTERNAL_INCLUDE_ 1
-#include "../packet/name_trick.hpp"
+#include "../packet/name_util.hpp"
 
 enum severity_level 
 {

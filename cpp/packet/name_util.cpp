@@ -1,4 +1,4 @@
-#include "name_trick.hpp"
+#include "name_util.hpp"
 
 bool NameUtilities::check_authoritative(const std::string& question)
 {

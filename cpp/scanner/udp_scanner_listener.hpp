@@ -13,7 +13,7 @@
 #include <tins/dns.h>
 
 #include "../log/log_service.hpp"
-#include "../packet/name_trick.hpp"
+#include "../packet/name_util.hpp"
 #include "../packet/packet_factory.hpp"
 #include "message_queue_packet.hpp"
 

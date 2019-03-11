@@ -16,7 +16,7 @@ ALL_OPT = $(CPP_OPT) $(OPTIMIZATION) $(BOOST_FLAG) $(BOOST_LOG) $(TINS_FLAG) $(P
 TARGET_SERVER = server_main
 TARGET_SCANNER = scanner_main
 
-$(TARGET_SERVER): $(TARGET_SERVER).o log_service.o constants.o name_tricks.o response_maker.o tcp_server.o udp_server.o edns.o
+$(TARGET_SERVER): $(TARGET_SERVER).o log_service.o constants.o name_utils.o response_maker.o tcp_server.o udp_server.o edns.o
 	g++ *.o $(ALL_OPT) -o $(TARGET_SERVER) && mv *.o build
 
 $(TARGET_SERVER).o : cpp/server/server_main.cpp
@@ -34,8 +34,8 @@ log_service.o : cpp/log/log_service.cpp
 constants.o : cpp/constants.hpp
 	g++ -c cpp/constants.hpp $(ALL_OPT)
 
-name_tricks.o : cpp/packet/name_trick.cpp
-	g++ -c cpp/packet/name_trick.cpp $(ALL_OPT)
+name_utils.o : cpp/packet/name_util.cpp
+	g++ -c cpp/packet/name_util.cpp $(ALL_OPT)
 
 response_maker.o : cpp/packet/response_maker.hpp
 	g++ -c cpp/packet/response_maker.hpp $(ALL_OPT)
@@ -63,12 +63,12 @@ monitor.o : cpp/scanner/monitor.cpp
 packet_factory.o: cpp/packet/packet_factory.cpp
 	g++ -c cpp/packet/packet_factory.cpp $(CPP_OPT) $(TINS_FLAG)
 
-udp_scanner_main: udp_scanner_sender.o udp_scanner_listener.o udp_scanner.o name_tricks.o log_service.o token_bucket.o tcp_scanner.o monitor.o packet_factory.o
+udp_scanner_main: udp_scanner_sender.o udp_scanner_listener.o udp_scanner.o name_utils.o log_service.o token_bucket.o tcp_scanner.o monitor.o packet_factory.o
 	g++ udp_scanner_sender.o \
 	    udp_scanner_listener.o \
 		udp_scanner.o \
 		log_service.o \
-		name_trick.o \
+		name_util.o \
 		token_bucket.o \
 		tcp_scanner.o \
 		monitor.o \
@@ -76,8 +76,8 @@ udp_scanner_main: udp_scanner_sender.o udp_scanner_listener.o udp_scanner.o name
 		$(ALL_OPT) -o \
 		udp_scanner
 
-tcp_scanner_main: tcp_scanner.o log_service.o name_tricks.o 
-	g++ tcp_scanner.o log_service.o name_trick.o -o tcp_scanner $(ALL_OPT)
+tcp_scanner_main: tcp_scanner.o log_service.o name_utils.o 
+	g++ tcp_scanner.o log_service.o name_util.o -o tcp_scanner $(ALL_OPT)
 
 token_bucket.o: cpp/scanner/token_bucket.cpp
 	g++ -c cpp/scanner/token_bucket.cpp $(CPP_OPT) $(POSIX_FLAG)

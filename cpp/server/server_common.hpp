@@ -28,7 +28,7 @@
 #endif
 
 #include "../constants.hpp"
-#include "../packet/name_trick.hpp"
+#include "../packet/name_util.hpp"
 #include "../packet/response_maker.hpp"
 #include "../log/log_service.hpp"
 

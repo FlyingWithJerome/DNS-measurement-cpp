@@ -25,7 +25,7 @@
 #include <tins/dns.h>
 
 #include "../log/log_service.hpp"
-#include "../packet/name_trick.hpp"
+#include "../packet/name_util.hpp"
 #include "query_commons.hpp"
 #include "message_queue_packet.hpp"
 

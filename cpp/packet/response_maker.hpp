@@ -9,7 +9,7 @@
 #define TCP_ANSWERS_ 
 
 #include "../constants.hpp"
-#include "name_trick.hpp"
+#include "name_util.hpp"
 
 #define RESPONSE_MAKER_COMMON(question, property)  Tins::DNS response; \
 response.id(question.id()); \
