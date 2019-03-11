@@ -20,7 +20,7 @@ enum PacketTypes {
 typedef struct{
     uint32_t    id;
     int         expect_answer_count;
-    int         actural_num__ans;
+    int         actual_num_ans;
     std::string q_name;
 } packet_configuration;
 
@@ -31,7 +31,7 @@ class PacketFactory
 
         static constexpr size_t udp_header_size    = 8;
         static constexpr size_t tcp_dns_size_shift = 2;
-        
+
     private:
         void make_udp_query(std::vector<uint8_t>&, const packet_configuration&);
         void make_tcp_query(std::vector<uint8_t>&, const packet_configuration&);
