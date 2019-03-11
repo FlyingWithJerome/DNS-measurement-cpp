@@ -16,6 +16,7 @@
 
 #include <boost/asio.hpp>
 #include <boost/bind.hpp>
+#include <boost/chrono.hpp>
 #include <boost/thread.hpp>
 #include <boost/interprocess/ipc/message_queue.hpp>
 #include <boost/scoped_ptr.hpp>

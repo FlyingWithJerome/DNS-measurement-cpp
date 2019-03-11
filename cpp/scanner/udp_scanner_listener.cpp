@@ -120,11 +120,11 @@ void UDPListener::handle_receive(
         std::string question_name = incoming_response.answers()[0].dname();
         std::transform(question_name.begin(), question_name.end(), question_name.begin(), ::tolower);
 
-        uint32_t question_id = NameTrick::get_question_id(question_name);
+        uint32_t question_id = NameUtilities::get_question_id(question_name);
 
-        NameTrick::JumboType jumbo_type_ = NameTrick::get_jumbo_type(question_name);
+        NameUtilities::JumboType jumbo_type_ = NameUtilities::get_jumbo_type(question_name);
         
-        if(jumbo_type_ == NameTrick::JumboType::no_jumbo) // not a jumbo query, will start a jumbo query
+        if(jumbo_type_ == NameUtilities::JumboType::no_jumbo) // not a jumbo query, will start a jumbo query
         {
             if (incoming_response.answers()[0].data() != "192.168.0.0")
             {
@@ -212,8 +212,8 @@ void UDPListener::handle_receive(
         }
 
         std::transform(question_name.begin(), question_name.end(), question_name.begin(), ::tolower);
-        uint32_t question_id            = NameTrick::get_question_id(question_name);
-        NameTrick::JumboType jumbo_type = NameTrick::get_jumbo_type(question_name);
+        uint32_t question_id            = NameUtilities::get_question_id(question_name);
+        NameUtilities::JumboType jumbo_type = NameUtilities::get_jumbo_type(question_name);
 
         UDP_SCANNER_BAD_RESPONSE_LOG(
             udp_bad_response_log_, 

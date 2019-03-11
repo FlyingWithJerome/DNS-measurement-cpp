@@ -2,7 +2,7 @@
 
 // int ResponseMaker::response_maker_udp(
 //     const Tins::DNS& question,
-//     const NameTrick::QueryProperty& query_property,
+//     const NameUtilities::QueryProperty& query_property,
 //     buffer_type& response_buffer
 // )
 // {
@@ -15,7 +15,7 @@
 
 //         if (not query_property.will_truncate 
 //             or 
-//             query_property.jumbo_type == NameTrick::JumboType::jumbo_one_answer)
+//             query_property.jumbo_type == NameUtilities::JumboType::jumbo_one_answer)
         
 //             response.add_answer(
 //                 Tins::DNS::resource(
@@ -48,7 +48,7 @@ uint16_t suppressed_size = (uint16_t)size_of_packet; \
 
 int ResponseMaker::response_maker_tcp(
     const Tins::DNS& question,
-    const NameTrick::QueryProperty& query_property,
+    const NameUtilities::QueryProperty& query_property,
     buffer_type& response_buffer
 )
 {

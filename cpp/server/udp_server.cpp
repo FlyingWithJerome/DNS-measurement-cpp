@@ -88,7 +88,7 @@ void UDPServer::handle_receive(const buffer_type& incoming_packet, std::size_t p
     {
         incoming_query = Tins::DNS(incoming_packet.data(), packet_size);
         question_name  = incoming_query.queries()[0].dname();
-        NameTrick::QueryProperty query_property(question_name);
+        NameUtilities::QueryProperty query_property(question_name);
 
         std::cout 
         << "[UDP] Processing " 

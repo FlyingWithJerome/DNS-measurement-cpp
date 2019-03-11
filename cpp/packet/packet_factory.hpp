@@ -22,6 +22,7 @@ typedef struct{
     int         expect_answer_count;
     int         actual_num_ans;
     std::string q_name;
+    
 } packet_configuration;
 
 class PacketFactory

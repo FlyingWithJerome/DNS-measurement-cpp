@@ -17,7 +17,7 @@
 
 #endif
 
-namespace NameTrick
+namespace NameUtilities
 {
     enum JumboType
     {

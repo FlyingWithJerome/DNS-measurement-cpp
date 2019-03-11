@@ -64,7 +64,7 @@ void TCPConnection::handle_reactor_receive(
         return;
     }
 
-    NameTrick::QueryProperty query_property(readable_packet.queries()[0].dname());
+    NameUtilities::QueryProperty query_property(readable_packet.queries()[0].dname());
 
     RESPONSE_MAKER_TCP(readable_packet, query_property)
 

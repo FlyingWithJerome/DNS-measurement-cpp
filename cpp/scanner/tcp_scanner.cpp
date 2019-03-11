@@ -56,6 +56,10 @@ int TCPScanner::service_loop() noexcept
                     )
                 );
             }
+            else
+            {
+                boost::this_thread::sleep_for(boost::chrono::milliseconds(2));
+            }
         }
         catch(...)
         {
@@ -77,7 +81,7 @@ void TCPScanner::perform_tcp_query(
 
     client.connect();
 
-    uint32_t question_id = NameTrick::get_question_id(question);
+    uint32_t question_id = NameUtilities::get_question_id(question);
 
     if (not client.is_connected)
     {

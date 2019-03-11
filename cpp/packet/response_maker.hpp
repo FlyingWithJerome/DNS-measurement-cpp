@@ -22,7 +22,7 @@ response.add_query(res_);}
 #define RESPONSE_MAKER_UDP(ques, qp) RESPONSE_MAKER_COMMON (ques, qp){ \
 response.rcode(DNS_RCODE_NOERROR); \
 response.truncated(qp.will_truncate); \
-if (not qp.will_truncate or qp.jumbo_type == NameTrick::JumboType::jumbo_one_answer) \
+if (not qp.will_truncate or qp.jumbo_type == NameUtilities::JumboType::jumbo_one_answer) \
 response.add_answer( \
     Tins::DNS::resource( \
         query_property.name, \

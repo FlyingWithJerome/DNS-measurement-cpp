@@ -1,6 +1,6 @@
 #include "name_trick.hpp"
 
-bool NameTrick::check_authoritative(const std::string& question)
+bool NameUtilities::check_authoritative(const std::string& question)
 {
     if (AUTHORITATIVE.size() > question.size())
         return false;
@@ -12,7 +12,7 @@ bool NameTrick::check_authoritative(const std::string& question)
     );
 }
 
-uint32_t NameTrick::get_question_id(const std::string& question)
+uint32_t NameUtilities::get_question_id(const std::string& question)
 {
     std::vector<std::string> after_split;
 
@@ -31,44 +31,44 @@ uint32_t NameTrick::get_question_id(const std::string& question)
         return INVALID_ID;
 }
 
-NameTrick::JumboType NameTrick::get_jumbo_type(const std::string& question)
+NameUtilities::JumboType NameUtilities::get_jumbo_type(const std::string& question)
 {
     if (SIGNAL_WORD.compare(question.substr(0, SIGNAL_WORD.size())) != 0)
-        return NameTrick::JumboType(no_jumbo);
+        return NameUtilities::JumboType(no_jumbo);
 
     const char key_character = question[SIGNAL_WORD.size()];
 
     switch(key_character)
     {
         case '1':
-            return NameTrick::JumboType(jumbo_one_answer);
+            return NameUtilities::JumboType(jumbo_one_answer);
 
         case '2':
-            return NameTrick::JumboType(jumbo_broken_answer);
+            return NameUtilities::JumboType(jumbo_broken_answer);
         
         default:
-            return NameTrick::JumboType(no_jumbo);
+            return NameUtilities::JumboType(no_jumbo);
     }
 }
 
-NameTrick::QueryProperty::QueryProperty(const std::string& raw_name)
+NameUtilities::QueryProperty::QueryProperty(const std::string& raw_name)
 :name(raw_name)
 {
     std::transform(name.begin(), name.end(), name.begin(), ::tolower);
 
-    this->is_authoritative = NameTrick::check_authoritative(name);
-    this->question_id      = NameTrick::get_question_id(name);
-    this->jumbo_type       = NameTrick::get_jumbo_type(name);
+    this->is_authoritative = NameUtilities::check_authoritative(name);
+    this->question_id      = NameUtilities::get_question_id(name);
+    this->jumbo_type       = NameUtilities::get_jumbo_type(name);
 
     this->normal_query_over_tcp = (name[0] == 't' and name[1] == '-');
 
     this->expect_answer_count      = 0;
     this->expect_number_of_answers = 0;
 
-    this->will_truncate    = this->jumbo_type != NameTrick::JumboType::no_jumbo and TRUNCATION_TRICK;
+    this->will_truncate    = this->jumbo_type != NameUtilities::JumboType::no_jumbo and TRUNCATION_TRICK;
 }
 
-NameTrick::QueryProperty::~QueryProperty()
+NameUtilities::QueryProperty::~QueryProperty()
 {
 }
 
