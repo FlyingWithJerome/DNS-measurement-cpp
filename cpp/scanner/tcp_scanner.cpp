@@ -94,13 +94,7 @@ void TCPScanner::perform_tcp_query(
     
     if (client.receive(response_packet) <= 0)
     {
-        TCP_SCANNER_NORMAL_LOG(
-            tcp_normal_log_, 
-            ip_address.c_str(), 
-            0, 
-            -1, 
-            "recv_timeout"
-        )
+        TCP_SCANNER_NORMAL_LOG(tcp_normal_log_, ip_address.c_str(), 0, -1, "recv_timeout")
         return;
     }
 
@@ -252,7 +246,7 @@ int TCPScanner::TCPClient::receive(std::vector<uint8_t>& packet)
         );
         if (recv_size > 0)
         {
-            packet.shrink_to_fit();
+            packet.resize(recv_size);
             return recv_size;
         }
         else if (recv_size < 0)

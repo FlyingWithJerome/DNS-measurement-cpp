@@ -1,8 +1,7 @@
 #include "packet_factory.hpp"
 
-PacketFactory::PacketFactory()
-{
-}
+constexpr size_t PacketFactory::udp_header_size;
+constexpr size_t PacketFactory::tcp_dns_size_shift;
 
 void PacketFactory::make_packet(
     const PacketTypes& packet_type,  
@@ -64,12 +63,16 @@ void PacketFactory::make_tcp_query(
         )
     );
     std::vector<uint8_t> binary_query = query.serialize();
-    packet_to_be_filled.reserve(binary_query.size()+2);
-    uint8_t header[2] = {
+    packet_to_be_filled.reserve(binary_query.size() + PacketFactory::tcp_dns_size_shift);
+    uint8_t header[PacketFactory::tcp_dns_size_shift] = {
         (uint8_t)((binary_query.size() >> 8)), (uint8_t)((binary_query.size() & 0xff))
     };
-    packet_to_be_filled.assign(header, header+2);
-    packet_to_be_filled.insert(packet_to_be_filled.begin()+2, binary_query.begin(), binary_query.end());
+    packet_to_be_filled.assign(header, header + PacketFactory::tcp_dns_size_shift);
+    packet_to_be_filled.insert(
+        packet_to_be_filled.begin() + PacketFactory::tcp_dns_size_shift, 
+        binary_query.begin(), 
+        binary_query.end()
+    );
 }
 
 void PacketFactory::make_raw_query(
@@ -88,10 +91,10 @@ void PacketFactory::make_raw_query(
         )
     );
     std::vector<uint8_t> binary_query = query.serialize();
-    const size_t full_packet_size     = binary_query.size() + 8;
+    const size_t full_packet_size     = binary_query.size() + PacketFactory::udp_header_size;
     packet_to_be_filled.reserve(full_packet_size);
 
-    const uint8_t header[8] = {
+    const uint8_t header[PacketFactory::udp_header_size] = {
         0xb, 
         0xb7, 
         0, 
@@ -101,9 +104,9 @@ void PacketFactory::make_raw_query(
         0, 
         0
     };
-    packet_to_be_filled.assign(header, header+8);
+    packet_to_be_filled.assign(header, header+PacketFactory::udp_header_size);
     packet_to_be_filled.insert(
-        packet_to_be_filled.begin()+8, 
+        packet_to_be_filled.begin() + PacketFactory::udp_header_size, 
         binary_query.begin(), 
         binary_query.end()
     );

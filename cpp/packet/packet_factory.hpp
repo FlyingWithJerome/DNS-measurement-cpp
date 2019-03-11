@@ -27,9 +27,11 @@ typedef struct{
 class PacketFactory
 {
     public:
-        PacketFactory();
         void make_packet(const PacketTypes&, std::vector<uint8_t>&, const packet_configuration&);
 
+        static constexpr size_t udp_header_size    = 8;
+        static constexpr size_t tcp_dns_size_shift = 2;
+        
     private:
         void make_udp_query(std::vector<uint8_t>&, const packet_configuration&);
         void make_tcp_query(std::vector<uint8_t>&, const packet_configuration&);
