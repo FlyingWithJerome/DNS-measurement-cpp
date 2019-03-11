@@ -24,8 +24,8 @@
 
 #include <tins/dns.h>
 
-#include "query_commons.hpp"
 #include "token_bucket.hpp"
+#include "../packet/packet_factory.hpp"
 
 class raw
 {
@@ -116,6 +116,7 @@ class UDPSender
         uint32_t num_of_packets_sent;
         std::atomic<bool>& sender_wait_signal_;
 
+        PacketFactory packet_factory_;
         TokenBucket bucket_;
 };
 

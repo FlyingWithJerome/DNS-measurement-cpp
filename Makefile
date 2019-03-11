@@ -60,7 +60,10 @@ tcp_scanner.o : cpp/scanner/tcp_scanner.cpp
 monitor.o : cpp/scanner/monitor.cpp
 	g++ -c cpp/scanner/monitor.cpp $(ALL_OPT)
 
-udp_scanner_main: udp_scanner_sender.o udp_scanner_listener.o udp_scanner.o name_tricks.o log_service.o token_bucket.o tcp_scanner.o monitor.o
+packet_factory.o: cpp/packet/packet_factory.cpp
+	g++ -c cpp/packet/packet_factory.cpp $(CPP_OPT) $(TINS_FLAG)
+
+udp_scanner_main: udp_scanner_sender.o udp_scanner_listener.o udp_scanner.o name_tricks.o log_service.o token_bucket.o tcp_scanner.o monitor.o packet_factory.o
 	g++ udp_scanner_sender.o \
 	    udp_scanner_listener.o \
 		udp_scanner.o \
@@ -69,6 +72,7 @@ udp_scanner_main: udp_scanner_sender.o udp_scanner_listener.o udp_scanner.o name
 		token_bucket.o \
 		tcp_scanner.o \
 		monitor.o \
+		packet_factory.o \
 		$(ALL_OPT) -o \
 		udp_scanner
 

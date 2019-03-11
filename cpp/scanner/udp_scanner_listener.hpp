@@ -14,7 +14,7 @@
 
 #include "../log/log_service.hpp"
 #include "../packet/name_trick.hpp"
-#include "query_commons.hpp"
+#include "../packet/packet_factory.hpp"
 #include "message_queue_packet.hpp"
 
 #define SEND_TO_TCP_SCANNER(q_name) message_pack outgoing; \
@@ -45,6 +45,8 @@ class UDPListener
         void reactor_read(const boost::system::error_code&);
         void handle_receive(const std::vector<uint8_t>&, const boost::asio::ip::udp::endpoint&);
         void handle_send(std::vector<uint8_t>&, const boost::system::error_code&, std::size_t);
+
+        PacketFactory packet_factory_;
 
         boost::asio::ip::udp::socket   main_socket_;
         boost::asio::ip::udp::endpoint remote_endpoint_;

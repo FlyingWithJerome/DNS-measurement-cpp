@@ -32,10 +32,14 @@ namespace NameTrick
 
         ~QueryProperty();
 
-        bool        is_authoritative;
-        uint32_t    question_id;
-        JumboType   jumbo_type;
-        bool        will_truncate;
+        bool      is_authoritative;
+        bool      will_truncate;
+        bool      normal_query_over_tcp;
+        uint8_t   expect_answer_count;
+        uint8_t   expect_number_of_answers;
+        uint32_t  question_id;
+        JumboType jumbo_type;
+
         std::string name;
     };
 

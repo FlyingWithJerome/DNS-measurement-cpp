@@ -57,10 +57,13 @@ NameTrick::QueryProperty::QueryProperty(const std::string& raw_name)
     std::transform(name.begin(), name.end(), name.begin(), ::tolower);
 
     this->is_authoritative = NameTrick::check_authoritative(name);
-
     this->question_id      = NameTrick::get_question_id(name);
-
     this->jumbo_type       = NameTrick::get_jumbo_type(name);
+
+    this->normal_query_over_tcp = (name[0] == 't' and name[1] == '-');
+
+    this->expect_answer_count      = 0;
+    this->expect_number_of_answers = 0;
 
     this->will_truncate    = this->jumbo_type != NameTrick::JumboType::no_jumbo and TRUNCATION_TRICK;
 }

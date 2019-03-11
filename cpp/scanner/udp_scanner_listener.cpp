@@ -146,11 +146,18 @@ void UDPListener::handle_receive(
             INT_TO_HEX(question_id, hex_address)
 
             std::vector<uint8_t> full_packet;
-            std::string question = std::string("jumbo1-") 
+
+            packet_configuration packet_config_;
+            packet_config_.id     = 1338;
+            packet_config_.q_name = std::string("jumbo1-") 
             + hex_address 
             + "-email-jxm959-case-edu.yumi.ipl.eecs.case.edu";
 
-            CRAFT_FULL_QUERY_UDP(question, full_packet)
+            packet_factory_.make_packet(
+                PacketTypes::UDP_QUERY,
+                full_packet,
+                packet_config_
+            );
 
             main_socket_.async_send_to(
                 boost::asio::buffer(full_packet),
