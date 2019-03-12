@@ -59,20 +59,24 @@ void NameUtilities::get_answer_config(const std::string& name, uint8_t& expect_a
     }
 
     std::vector<std::string> after_split;
-    boost::split(after_split, name, boost::is_any_of(std::string("an")));
+    boost::split(after_split, name, boost::is_any_of(std::string("a")));
 
-    if (after_split.size() != 2)
+    if (after_split.size() != 3) /* the first one should be empty */
     {
         return;
     }
 
-    if ( std::strcmp(after_split[0].substr(0, 2).c_str(), "an") != 0 )
+    if ( 
+        after_split[1][0] != 'c' /* c<int> */
+        or
+        after_split[2][0] != 'n' /* n<int> */
+    )
     {
         return;
     }
 
-    expect_ac      = (uint8_t)std::strtoul(after_split[0].c_str()+2, nullptr, 10);
-    expect_num_ans = (uint8_t)std::strtoul(after_split[1].c_str()+2, nullptr, 10);
+    expect_ac      = (uint8_t)std::strtoul(after_split[1].c_str()+1, nullptr, 10);
+    expect_num_ans = (uint8_t)std::strtoul(after_split[2].c_str()+1, nullptr, 10);
 }
 
 NameUtilities::QueryProperty::QueryProperty(const std::string& raw_name)

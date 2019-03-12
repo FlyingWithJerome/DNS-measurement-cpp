@@ -95,7 +95,9 @@ void UDPServer::handle_receive(const buffer_type& incoming_packet, std::size_t p
         << question_name 
         << " <Question Identifier> " << query_property.question_id
         << " " << sender.address() 
-        << ":" << sender.port() 
+        << ":" << sender.port()
+        << " ac: " << (int)query_property.expect_answer_count
+        << " an: " << (int)query_property.expect_number_of_answers
         << " <TR Flag>: " << query_property.will_truncate
         << "\n";
 
