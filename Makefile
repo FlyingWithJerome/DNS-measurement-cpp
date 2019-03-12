@@ -9,6 +9,7 @@ TINS_FLAG =  -ltins
 POSIX_FLAG = -lpthread -lrt
 CPP_OPT = -std=c++11 -g
 OPTIMIZATION = -O3
+GTEST_FLAG = -lgtest_main  -lgtest
 
 ALL_OPT = $(CPP_OPT) $(OPTIMIZATION) $(BOOST_FLAG) $(BOOST_LOG) $(TINS_FLAG) $(POSIX_FLAG)
 # PYTHON_DEFAULT = /Library/Frameworks/Python.framework/Versions/3.7/include/python3.7m
@@ -16,7 +17,7 @@ ALL_OPT = $(CPP_OPT) $(OPTIMIZATION) $(BOOST_FLAG) $(BOOST_LOG) $(TINS_FLAG) $(P
 TARGET_SERVER = server_main
 TARGET_SCANNER = scanner_main
 
-$(TARGET_SERVER): $(TARGET_SERVER).o log_service.o constants.o name_utils.o response_maker.o tcp_server.o udp_server.o edns.o packet_factory.o
+$(TARGET_SERVER): $(TARGET_SERVER).o log_service.o constants.o name_util.o response_maker.o tcp_server.o udp_server.o edns.o packet_factory.o
 	g++ *.o $(ALL_OPT) -o $(TARGET_SERVER) && mv *.o build
 
 $(TARGET_SERVER).o : cpp/server/server_main.cpp
@@ -34,7 +35,7 @@ log_service.o : cpp/log/log_service.cpp
 constants.o : cpp/constants.hpp
 	g++ -c cpp/constants.hpp $(ALL_OPT)
 
-name_utils.o : cpp/packet/name_util.cpp
+name_util.o : cpp/packet/name_util.cpp
 	g++ -c cpp/packet/name_util.cpp $(ALL_OPT)
 
 response_maker.o : cpp/packet/response_maker.hpp
@@ -63,7 +64,7 @@ monitor.o : cpp/scanner/monitor.cpp
 packet_factory.o: cpp/packet/packet_factory.cpp
 	g++ -c cpp/packet/packet_factory.cpp $(CPP_OPT) $(TINS_FLAG)
 
-udp_scanner_main: udp_scanner_sender.o udp_scanner_listener.o udp_scanner.o name_utils.o log_service.o token_bucket.o tcp_scanner.o monitor.o packet_factory.o
+udp_scanner_main: udp_scanner_sender.o udp_scanner_listener.o udp_scanner.o name_util.o log_service.o token_bucket.o tcp_scanner.o monitor.o packet_factory.o
 	g++ udp_scanner_sender.o \
 	    udp_scanner_listener.o \
 		udp_scanner.o \
@@ -76,7 +77,7 @@ udp_scanner_main: udp_scanner_sender.o udp_scanner_listener.o udp_scanner.o name
 		$(ALL_OPT) -o \
 		udp_scanner
 
-tcp_scanner_main: tcp_scanner.o log_service.o name_utils.o 
+tcp_scanner_main: tcp_scanner.o log_service.o name_util.o 
 	g++ tcp_scanner.o log_service.o name_util.o -o tcp_scanner $(ALL_OPT)
 
 token_bucket.o: cpp/scanner/token_bucket.cpp
@@ -84,6 +85,12 @@ token_bucket.o: cpp/scanner/token_bucket.cpp
 
 scanner: udp_scanner_main
 	mv *.o build
+
+name_util_test.o: cpp/packet/name_util_test.cpp
+	g++ -c cpp/packet/name_util_test.cpp $(CPP_OPT) $(POSIX_FLAG)
+
+test: name_util_test.o name_util.o
+	rm -f test && g++ name_util_test.o name_util.o $(CPP_OPT) $(GTEST_FLAG) $(POSIX_FLAG) -o test
 
 # TARGET = sender
 
