@@ -105,7 +105,15 @@ void UDPServer::handle_receive(const buffer_type& incoming_packet, std::size_t p
         else
             UDP_TRUNCATION_LOG(udp_tc_log_name_, query_property, sender)
 
-        RESPONSE_MAKER_UDP(incoming_query, query_property)
+        std::vector<uint8_t> raw_data;
+
+        response_factory.make_packet(
+            PacketTypes::UDP_RESPONSE,
+            incoming_query,
+            query_property,
+            raw_data
+        );
+        // RESPONSE_MAKER_UDP(incoming_query, query_property)
 
         main_socket_.async_send_to(
             boost::asio::buffer(
@@ -122,13 +130,6 @@ void UDPServer::handle_receive(const buffer_type& incoming_packet, std::size_t p
 
         EDNS edns_result(incoming_query);
         EDNS_LOG(udp_edns_log_name_, query_property, sender, edns_result)
-
-        std::cout 
-        << "the UDP Payload is " << edns_result.EDNS0_payload 
-        << " the ECS subnet is " << edns_result.ECS_subnet_address 
-        << "/" << edns_result.ECS_subnet_mask 
-        << "\n";
-
     }
     catch(...)
     {

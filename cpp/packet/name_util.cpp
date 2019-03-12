@@ -2,13 +2,13 @@
 
 bool NameUtilities::check_authoritative(const std::string& question)
 {
-    if (AUTHORITATIVE.size() > question.size())
+    if (authoritative_name.size() > question.size())
         return false;
 
     return std::equal(
-        question.begin() + question.size() - AUTHORITATIVE.size(), 
+        question.begin() + question.size() - authoritative_name.size(), 
         question.end(), 
-        AUTHORITATIVE.begin()
+        authoritative_name.begin()
     );
 }
 
@@ -16,7 +16,7 @@ uint32_t NameUtilities::get_question_id(const std::string& question)
 {
     std::vector<std::string> after_split;
 
-    boost::split(after_split, question, boost::is_any_of(DELIMITER));
+    boost::split(after_split, question, boost::is_any_of(delimiter));
 
     if (after_split.size() < 2)
         return INVALID_ID;
@@ -33,10 +33,10 @@ uint32_t NameUtilities::get_question_id(const std::string& question)
 
 NameUtilities::JumboType NameUtilities::get_jumbo_type(const std::string& question)
 {
-    if (SIGNAL_WORD.compare(question.substr(0, SIGNAL_WORD.size())) != 0)
+    if (signal_word.compare(question.substr(0, signal_word.size())) != 0)
         return NameUtilities::JumboType(no_jumbo);
 
-    const char key_character = question[SIGNAL_WORD.size()];
+    const char key_character = question[signal_word.size()];
 
     switch(key_character)
     {

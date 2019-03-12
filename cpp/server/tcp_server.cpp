@@ -19,8 +19,9 @@ TCPServer::TCPServer(boost::asio::io_service& io_service)
 void TCPServer::start_accept()
 {
     TCPConnection::pointer new_connection = TCPConnection::create(
-        acceptor_.get_io_service(),
-        tcp_log_name_
+        tcp_log_name_,
+        response_factory_,
+        acceptor_.get_io_service()
     );
 
     acceptor_.async_accept(

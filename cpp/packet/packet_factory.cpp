@@ -1,9 +1,9 @@
 #include "packet_factory.hpp"
 
-constexpr size_t PacketFactory::udp_header_size;
-constexpr size_t PacketFactory::tcp_dns_size_shift;
+constexpr size_t QueryFactory::udp_header_size;
+constexpr size_t QueryFactory::tcp_dns_size_shift;
 
-void PacketFactory::make_packet(
+void QueryFactory::make_packet(
     const PacketTypes& packet_type,
     const packet_configuration& packet_config,
     std::vector<uint8_t>& packet_to_be_filled
@@ -26,7 +26,7 @@ void PacketFactory::make_packet(
 }
 
 
-void PacketFactory::make_udp_query(
+void QueryFactory::make_udp_query(
     const packet_configuration& packet_config,
     std::vector<uint8_t>& packet_to_be_filled
 )
@@ -44,7 +44,7 @@ void PacketFactory::make_udp_query(
     packet_to_be_filled = query.serialize();
 }
 
-void PacketFactory::make_tcp_query(
+void QueryFactory::make_tcp_query(
     const packet_configuration& packet_config,
     std::vector<uint8_t>& packet_to_be_filled
 )
@@ -60,19 +60,19 @@ void PacketFactory::make_tcp_query(
         )
     );
     std::vector<uint8_t> binary_query = query.serialize();
-    packet_to_be_filled.reserve(binary_query.size() + PacketFactory::tcp_dns_size_shift);
-    uint8_t header[PacketFactory::tcp_dns_size_shift] = {
+    packet_to_be_filled.reserve(binary_query.size() + QueryFactory::tcp_dns_size_shift);
+    uint8_t header[QueryFactory::tcp_dns_size_shift] = {
         (uint8_t)((binary_query.size() >> 8)), (uint8_t)((binary_query.size() & 0xff))
     };
-    packet_to_be_filled.assign(header, header + PacketFactory::tcp_dns_size_shift);
+    packet_to_be_filled.assign(header, header + QueryFactory::tcp_dns_size_shift);
     packet_to_be_filled.insert(
-        packet_to_be_filled.begin() + PacketFactory::tcp_dns_size_shift, 
+        packet_to_be_filled.begin() + QueryFactory::tcp_dns_size_shift, 
         binary_query.begin(), 
         binary_query.end()
     );
 }
 
-void PacketFactory::make_raw_query(
+void QueryFactory::make_raw_query(
     const packet_configuration& packet_config,
     std::vector<uint8_t>& packet_to_be_filled
 )
@@ -88,10 +88,10 @@ void PacketFactory::make_raw_query(
         )
     );
     std::vector<uint8_t> binary_query = query.serialize();
-    const size_t full_packet_size     = binary_query.size() + PacketFactory::udp_header_size;
+    const size_t full_packet_size     = binary_query.size() + QueryFactory::udp_header_size;
     packet_to_be_filled.reserve(full_packet_size);
 
-    const uint8_t header[PacketFactory::udp_header_size] = {
+    const uint8_t header[QueryFactory::udp_header_size] = {
         0xb, 
         0xb7, 
         0, 
@@ -101,10 +101,132 @@ void PacketFactory::make_raw_query(
         0, 
         0
     };
-    packet_to_be_filled.assign(header, header+PacketFactory::udp_header_size);
+    packet_to_be_filled.assign(header, header+QueryFactory::udp_header_size);
     packet_to_be_filled.insert(
-        packet_to_be_filled.begin() + PacketFactory::udp_header_size, 
+        packet_to_be_filled.begin() + QueryFactory::udp_header_size, 
         binary_query.begin(), 
         binary_query.end()
     );
+}
+
+
+ResponseFactory::ResponseFactory()
+: answer_starts(
+    std::string(ANSWER_STARTS)
+)
+{
+    for(int num_of_resource=0; num_of_resource < NUMBER_OF_LONG_ENTRIES; num_of_resource++)
+    {
+        tcp_answers.push_back(answer_starts + std::to_string(num_of_resource));
+    }
+}
+
+void ResponseFactory::make_packet(
+    const PacketTypes&                  packet_type,
+    const Tins::DNS&                    question,
+    const NameUtilities::QueryProperty& query_property,
+    std::vector<uint8_t>&               packet_to_be_filled
+) const
+{
+    switch(packet_type)
+    {
+        case UDP_RESPONSE:
+            return make_udp_response(question, query_property, packet_to_be_filled);
+
+        case TCP_RESPONSE:
+            return make_tcp_response(question, query_property, packet_to_be_filled);
+
+        default:
+            break;
+    }
+}
+
+void ResponseFactory::make_udp_response(
+    const Tins::DNS&                    question,
+    const NameUtilities::QueryProperty& query_property,
+    std::vector<uint8_t>&               packet_to_be_filled
+) const
+{
+    Tins::DNS response;
+    response.id(question.id());
+    response.truncated(query_property.will_truncate);
+    response.type(Tins::DNS::QRType::RESPONSE);
+    response.opcode(DNS_OPCODE_REPLY);
+
+    if (query_property.is_authoritative)
+    {
+        for(const Tins::DNS::query& query : question.queries())
+        {
+            response.add_query(query);
+        }
+
+        Tins::DNS::QueryClass query_class = response.queries()[0].query_class();
+        Tins::DNS::QueryType  query_type  = response.queries()[0].query_type();
+
+        if (not query_property.will_truncate or query_property.jumbo_type == NameUtilities::JumboType::jumbo_one_answer)
+        {
+            response.add_answer(
+                Tins::DNS::resource(
+                    query_property.name,
+                    tcp_answers[0],
+                    query_type,
+                    query_class,
+                    DNS_RESOURCE_TTL
+                )
+            );
+        }
+    }
+    else
+    {
+        response.rcode(DNS_RCODE_REFUSED);
+    }
+    
+    packet_to_be_filled = response.serialize();
+}
+
+void ResponseFactory::make_tcp_response(
+    const Tins::DNS&                    question,
+    const NameUtilities::QueryProperty& query_property,
+    std::vector<uint8_t>&               packet_to_be_filled
+) const
+{
+    Tins::DNS response;
+    response.id(question.id());
+    response.truncated(query_property.will_truncate);
+    response.type(Tins::DNS::QRType::RESPONSE);
+    response.opcode(DNS_OPCODE_REPLY);
+
+    if (query_property.is_authoritative)
+    {
+        for(const Tins::DNS::query& query : question.queries())
+        {
+            response.add_query(query);
+        }
+
+        Tins::DNS::QueryClass query_class = response.queries()[0].query_class();
+        Tins::DNS::QueryType  query_type  = response.queries()[0].query_type();
+
+        for(const std::string& answer : tcp_answers)
+        {
+            response.add_answer(
+                Tins::DNS::resource(
+                    query_property.name,
+                    answer,
+                    query_type,
+                    query_class,
+                    DNS_RESOURCE_TTL
+                )
+            );
+        }
+    }
+    else
+    {
+        response.rcode(DNS_RCODE_REFUSED);
+    }
+
+    uint16_t size_of_packet = (uint16_t)response.size();
+    uint8_t res_size[] = {(uint8_t)(size_of_packet >> 8), (uint8_t)(size_of_packet & 0xFF)};
+
+    packet_to_be_filled = response.serialize();
+    packet_to_be_filled.insert(packet_to_be_filled.begin(), res_size, res_size+2);
 }

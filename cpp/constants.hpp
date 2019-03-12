@@ -5,15 +5,8 @@
 #define DNS_PORT       53
 
 #define AUTHORITATIVE_NAME "yumi.ipl.eecs.case.edu"
-
-#ifdef NAMES_
-    #include <string>
-
-    std::string AUTHORITATIVE(AUTHORITATIVE_NAME);
-    std::string DELIMITER("-");
-
-    std::string SIGNAL_WORD("jumbo");
-#endif
+#define DELIMITER "-"
+#define SIGNAL_WORD "jumbo"
 
 #define INVALID_ID 0
 #define START_WITH_0x 1

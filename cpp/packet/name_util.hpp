@@ -19,6 +19,10 @@
 
 namespace NameUtilities
 {
+    const std::string authoritative_name("yumi.ipl.eecs.case.edu");
+    const std::string delimiter("-");
+    const std::string signal_word("jumbo");
+    
     enum JumboType
     {
         no_jumbo,
@@ -28,6 +32,7 @@ namespace NameUtilities
     
     struct QueryProperty
     {
+        QueryProperty() = default;
         QueryProperty(const std::string&);
 
         ~QueryProperty();

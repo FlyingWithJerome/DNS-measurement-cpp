@@ -16,7 +16,7 @@ ALL_OPT = $(CPP_OPT) $(OPTIMIZATION) $(BOOST_FLAG) $(BOOST_LOG) $(TINS_FLAG) $(P
 TARGET_SERVER = server_main
 TARGET_SCANNER = scanner_main
 
-$(TARGET_SERVER): $(TARGET_SERVER).o log_service.o constants.o name_utils.o response_maker.o tcp_server.o udp_server.o edns.o
+$(TARGET_SERVER): $(TARGET_SERVER).o log_service.o constants.o name_utils.o response_maker.o tcp_server.o udp_server.o edns.o packet_factory.o
 	g++ *.o $(ALL_OPT) -o $(TARGET_SERVER) && mv *.o build
 
 $(TARGET_SERVER).o : cpp/server/server_main.cpp

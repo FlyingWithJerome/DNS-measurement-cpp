@@ -116,7 +116,7 @@ class UDPSender
         uint32_t num_of_packets_sent;
         std::atomic<bool>& sender_wait_signal_;
 
-        PacketFactory packet_factory_;
+        QueryFactory packet_factory_;
         TokenBucket bucket_;
 };
 

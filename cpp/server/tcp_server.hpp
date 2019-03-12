@@ -3,6 +3,7 @@
 
 #include "server_common.hpp"
 #include "tcp_connection.hpp"
+#include "../packet/packet_factory.hpp"
 
 class TCPServer
 {
@@ -20,5 +21,6 @@ class TCPServer
         );
 
         boost::asio::ip::tcp::acceptor acceptor_;
+        ResponseFactory response_factory_;
 };
 #endif

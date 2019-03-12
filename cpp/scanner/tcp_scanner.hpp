@@ -52,7 +52,7 @@ class TCPScanner
         boost::thread_group     thread_pool_;
         boost::scoped_ptr<boost::asio::io_service::work> work;
 
-        PacketFactory packet_factory_;
+        QueryFactory packet_factory_;
 
         class TCPClient
         {

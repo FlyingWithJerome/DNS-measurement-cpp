@@ -46,7 +46,7 @@ class UDPListener
         void handle_receive(const std::vector<uint8_t>&, const boost::asio::ip::udp::endpoint&);
         void handle_send(std::vector<uint8_t>&, const boost::system::error_code&, std::size_t);
 
-        PacketFactory packet_factory_;
+        QueryFactory packet_factory_;
 
         boost::asio::ip::udp::socket   main_socket_;
         boost::asio::ip::udp::endpoint remote_endpoint_;

@@ -4,6 +4,7 @@
 #define FROM_UDP_SERVER
 
 #include "server_common.hpp"
+#include "../packet/packet_factory.hpp"
 #include "../packet/edns.hpp"
 
 class UDPServer
@@ -23,6 +24,8 @@ class UDPServer
         void reactor_read(const boost::system::error_code&);
         void handle_receive(const buffer_type&, std::size_t, const boost::asio::ip::udp::endpoint&);
         void handle_send(const boost::system::error_code&, std::size_t);
+
+        ResponseFactory response_factory;
 
         boost::asio::ip::udp::socket   main_socket_;
         boost::asio::ip::udp::endpoint remote_endpoint_;
