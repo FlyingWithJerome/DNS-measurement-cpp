@@ -17,6 +17,12 @@
 
 #endif
 
+// The incoming queries will have one of the following forms
+// 1. 0x8080808-jxm959-case-edu.yumi.ipl.eecs.case.edu
+// 2. t-0x8080808-jxm959-case-edu.yumi.ipl.eecs.case.edu
+// 3. ac1an1-jumbo1-0x8080808-jxm959-case-edu.yumi.ipl.eecs.case.edu
+
+
 namespace NameUtilities
 {
     const std::string authoritative_name("yumi.ipl.eecs.case.edu");
@@ -35,8 +41,6 @@ namespace NameUtilities
         QueryProperty() = default;
         QueryProperty(const std::string&);
 
-        ~QueryProperty();
-
         bool      is_authoritative;
         bool      will_truncate;
         bool      normal_query_over_tcp;
@@ -54,6 +58,8 @@ namespace NameUtilities
     uint32_t get_question_id(const std::string&);
     /* get the jumbo type from the question */
     JumboType get_jumbo_type(const std::string&);
+    /* get the expect answer count and number of answers */
+    void get_answer_config(const std::string&, uint8_t& expect_ac, uint8_t& expect_num_ans);
 };
 
 #endif
