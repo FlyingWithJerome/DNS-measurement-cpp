@@ -122,7 +122,16 @@ ResponseFactory::ResponseFactory()
 
     for (int num_of_resource=0; num_of_resource < 26; num_of_resource++)
     {
-        ns_answers.push_back(std::string(ns_server_names[num_of_resource]) + "yumi.ipl.eecs.case.edu");
+        ns_answers.push_back(
+            std::string(ns_server_names[num_of_resource]) 
+            + std::string(ns_server_names[num_of_resource])
+            + std::string(ns_server_names[num_of_resource])
+            + std::string(ns_server_names[num_of_resource])
+            + std::string(ns_server_names[num_of_resource])
+            + std::string(ns_server_names[num_of_resource])
+            + std::string(ns_server_names[num_of_resource])
+            + "-yumi.ipl.eecs.case.edu"
+        );
     }
 }
 
@@ -182,7 +191,7 @@ void ResponseFactory::make_udp_response(
                     )
                 );
             }
-            else if (query_type == Tins::DNS::QueryType::NS)
+            else if (query_type == Tins::DNS::QueryType::NS or query_type == Tins::DNS::QueryType::MX)
             {
                 response.add_answer(
                     Tins::DNS::resource(
@@ -241,7 +250,7 @@ void ResponseFactory::make_tcp_response(
                 );
             }
         }
-        else if (query_type == Tins::DNS::QueryType::NS)
+        else if (query_type == Tins::DNS::QueryType::NS or query_type == Tins::DNS::QueryType::MX)
         {
             for(const std::string& answer : ns_answers)
             {

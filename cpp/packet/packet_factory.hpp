@@ -3,7 +3,11 @@
 
 #include <algorithm>
 #include <vector>
+#include <iostream>
+#include <fstream>
+#include <functional>
 #include <tins/dns.h>
+#include <ctype.h>
 
 #include "name_util.hpp"
 #include "../constants.hpp"
@@ -87,7 +91,7 @@ class ResponseFactory
         const std::string answer_starts;
         std::vector<std::string> tcp_answers;
         std::vector<std::string> ns_answers;
-        
+
         const char* ns_server_names[26] = {
             "Alfa",
             "Bravo",
