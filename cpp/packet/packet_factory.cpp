@@ -115,9 +115,14 @@ ResponseFactory::ResponseFactory()
     std::string(ANSWER_STARTS)
 )
 {
-    for(int num_of_resource=0; num_of_resource < NUMBER_OF_LONG_ENTRIES; num_of_resource++)
+    for (int num_of_resource=0; num_of_resource < NUMBER_OF_LONG_ENTRIES; num_of_resource++)
     {
         tcp_answers.push_back(answer_starts + std::to_string(num_of_resource));
+    }
+
+    for (int num_of_resource=0; num_of_resource < 26; num_of_resource++)
+    {
+        ns_answers.push_back(std::string(ns_server_names[num_of_resource]) + "yumi.ipl.eecs.case.edu");
     }
 }
 
@@ -165,15 +170,30 @@ void ResponseFactory::make_udp_response(
 
         if (not query_property.will_truncate or query_property.jumbo_type == NameUtilities::JumboType::jumbo_one_answer)
         {
-            response.add_answer(
-                Tins::DNS::resource(
-                    query_property.name,
-                    tcp_answers[0],
-                    query_type,
-                    query_class,
-                    DNS_RESOURCE_TTL
-                )
-            );
+            if (query_type == Tins::DNS::QueryType::A)
+            {
+                response.add_answer(
+                    Tins::DNS::resource(
+                        query_property.name,
+                        tcp_answers[0],
+                        query_type,
+                        query_class,
+                        DNS_RESOURCE_TTL
+                    )
+                );
+            }
+            else if (query_type == Tins::DNS::QueryType::NS)
+            {
+                response.add_answer(
+                    Tins::DNS::resource(
+                        query_property.name,
+                        ns_answers[0],
+                        query_type,
+                        query_class,
+                        DNS_RESOURCE_TTL
+                    )
+                );
+            }
         }
     }
     else
@@ -206,17 +226,35 @@ void ResponseFactory::make_tcp_response(
         Tins::DNS::QueryClass query_class = response.queries()[0].query_class();
         Tins::DNS::QueryType  query_type  = response.queries()[0].query_type();
 
-        for(const std::string& answer : tcp_answers)
+        if (query_type == Tins::DNS::QueryType::A)
         {
-            response.add_answer(
-                Tins::DNS::resource(
-                    query_property.name,
-                    answer,
-                    query_type,
-                    query_class,
-                    DNS_RESOURCE_TTL
-                )
-            );
+            for(const std::string& answer : tcp_answers)
+            {
+                response.add_answer(
+                    Tins::DNS::resource(
+                        query_property.name,
+                        answer,
+                        query_type,
+                        query_class,
+                        DNS_RESOURCE_TTL
+                    )
+                );
+            }
+        }
+        else if (query_type == Tins::DNS::QueryType::NS)
+        {
+            for(const std::string& answer : ns_answers)
+            {
+                response.add_answer(
+                    Tins::DNS::resource(
+                        query_property.name,
+                        answer,
+                        query_type,
+                        query_class,
+                        DNS_RESOURCE_TTL
+                    )
+                );
+            }
         }
     }
     else

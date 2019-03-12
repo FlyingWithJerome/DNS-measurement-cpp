@@ -86,6 +86,36 @@ class ResponseFactory
 
         const std::string answer_starts;
         std::vector<std::string> tcp_answers;
+        std::vector<std::string> ns_answers;
+        
+        const char* ns_server_names[26] = {
+            "Alfa",
+            "Bravo",
+            "Charlie",
+            "Delta",
+            "Echo",
+            "Foxtrot",
+            "Golf",
+            "Hotel",
+            "India",
+            "Juliett",
+            "Kilo",
+            "Lima",
+            "Mike",
+            "November",
+            "Oscar",
+            "Papa",
+            "Quebec",
+            "Romeo",
+            "Sierra",
+            "Tango",
+            "Uniform",
+            "Victor",
+            "Whiskey",
+            "X-ray",
+            "Yankee",
+            "Zulu"
+        };
 };
 
 #endif
