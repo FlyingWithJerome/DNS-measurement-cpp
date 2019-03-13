@@ -160,6 +160,9 @@ void ResponseFactory::make_udp_response(
     response.type(Tins::DNS::QRType::RESPONSE);
     response.opcode(DNS_OPCODE_REPLY);
 
+    int number_of_answer_entries = (query_property.expect_number_of_answers == UINT8_MAX) ? 
+    1 : query_property.expect_number_of_answers;
+
     if (query_property.is_authoritative)
     {
         for(const Tins::DNS::query& query : question.queries())
@@ -175,39 +178,15 @@ void ResponseFactory::make_udp_response(
             switch (query_type)
             {
                 case Tins::DNS::QueryType::A:
-                    response.add_answer(
-                        Tins::DNS::resource(
-                            query_property.name,
-                            tcp_answers[0],
-                            query_type,
-                            query_class,
-                            DNS_RESOURCE_TTL
-                        )
-                    );
+                    APPEND_ANSWER(tcp, number_of_answer_entries)
                     break;
                 
                 case Tins::DNS::QueryType::NS:
-                    response.add_answer(
-                        Tins::DNS::resource(
-                            query_property.name,
-                            ns_answers[0],
-                            query_type,
-                            query_class,
-                            DNS_RESOURCE_TTL
-                        )
-                    );
+                    APPEND_ANSWER(ns, number_of_answer_entries)
                     break;
 
                 case Tins::DNS::QueryType::MX:
-                    response.add_answer(
-                        Tins::DNS::resource(
-                            query_property.name,
-                            ns_answers[0],
-                            query_type,
-                            query_class,
-                            DNS_RESOURCE_TTL
-                        )
-                    );
+                    APPEND_ANSWER(ns, number_of_answer_entries)
                     break;
 
                 case Tins::DNS::QueryType::TXT:
@@ -224,6 +203,12 @@ void ResponseFactory::make_udp_response(
     }
     
     packet_to_be_filled = response.serialize();
+
+    if (query_property.expect_answer_count != UINT8_MAX)
+    {
+        packet_to_be_filled[6] = (uint8_t)(query_property.expect_answer_count >> 8);
+        packet_to_be_filled[7] = (uint8_t)(query_property.expect_answer_count & 0xff);
+    }
 }
 
 void ResponseFactory::make_tcp_response(

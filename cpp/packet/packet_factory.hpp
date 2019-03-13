@@ -60,6 +60,19 @@ class QueryFactory
 
 };
 
+#define APPEND_ANSWER(answer_set, num) for (int answer_index = 0; answer_index < num; answer_index++) \
+{ \
+    response.add_answer( \
+        Tins::DNS::resource( \
+            query_property.name, \
+            answer_set##_answers[answer_index], \
+            query_type, \
+            query_class, \
+            DNS_RESOURCE_TTL \
+        ) \
+    ); \
+}
+
 class ResponseFactory
 {
     public:
