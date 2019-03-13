@@ -18,9 +18,29 @@
 #include "message_queue_packet.hpp"
 
 #define SEND_TO_TCP_SCANNER(q_name) message_pack outgoing; \
-strcpy(outgoing.ip_address, sender.address().to_string().c_str()); \
-strcpy(outgoing.question,   (q_name).c_str()); \
-pipe_to_tcp_->send(&outgoing, sizeof(outgoing), 1);
+    strcpy(outgoing.ip_address, sender.address().to_string().c_str()); \
+    strcpy(outgoing.question,   (q_name).c_str()); \
+    pipe_to_tcp_->send(&outgoing, sizeof(outgoing), 1);
+
+#define SEND_OUT_PACKET(alias, packet_carrier, question_name, sender) packet_configuration packet_config_##alias; \
+    packet_config_##alias.id     = 1338; \
+    packet_config_##alias.q_name = question_name; \
+    packet_factory_.make_packet( \
+        PacketTypes::UDP_QUERY, \
+        packet_config_##alias, \
+        packet_carrier \
+    ); \
+    main_socket_.async_send_to( \
+        boost::asio::buffer(packet_carrier), \
+        sender, \
+        boost::bind( \
+            &UDPListener::handle_send, \
+            this, \
+            packet_carrier, \
+            boost::asio::placeholders::error, \
+            boost::asio::placeholders::bytes_transferred \
+        ) \
+    );
 
 class UDPListener
 {

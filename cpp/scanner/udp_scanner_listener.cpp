@@ -109,6 +109,8 @@ void UDPListener::handle_receive(
     << thread_id
     << ") Address: " 
     << sender.address().to_string()
+    // << " Name: "
+    // << incoming_response.queries()[0].dname()
     << " rcode: "
     << (int)incoming_response.rcode()
     << " answer count: "
@@ -118,13 +120,14 @@ void UDPListener::handle_receive(
     if (incoming_response.rcode() == 0 and incoming_response.answers_count() > 0)
     { // is a legal response
         std::string question_name = incoming_response.answers()[0].dname();
-        std::transform(question_name.begin(), question_name.end(), question_name.begin(), ::tolower);
+        NameUtilities::QueryProperty query_property(question_name);
+        // std::transform(question_name.begin(), question_name.end(), question_name.begin(), ::tolower);
 
-        uint32_t question_id = NameUtilities::get_question_id(question_name);
+        // uint32_t question_id = NameUtilities::get_question_id(question_name);
 
-        NameUtilities::JumboType jumbo_type_ = NameUtilities::get_jumbo_type(question_name);
+        // NameUtilities::JumboType jumbo_type_ = NameUtilities::get_jumbo_type(question_name);
         
-        if(jumbo_type_ == NameUtilities::JumboType::no_jumbo) // not a jumbo query, will start a jumbo query
+        if(query_property.jumbo_type == NameUtilities::JumboType::no_jumbo) // not a jumbo query, will start a jumbo query
         {
             if (incoming_response.answers()[0].data() != "192.168.0.0")
             {
@@ -132,9 +135,9 @@ void UDPListener::handle_receive(
                 UDP_SCANNER_BAD_RESPONSE_LOG(
                     udp_bad_response_log_,
                     sender,
-                    question_id,
+                    query_property.question_id,
                     0,
-                    (int)jumbo_type_,
+                    (int)query_property.jumbo_type,
                     incoming_response.answers_count(),
                     "answer error"
                 )
@@ -143,36 +146,24 @@ void UDPListener::handle_receive(
             std::vector<uint8_t> packet;
             std::string          hex_address;
 
-            INT_TO_HEX(question_id, hex_address)
+            // INT_TO_HEX(question_id, hex_address)
 
-            std::vector<uint8_t> full_packet;
+            std::vector<uint8_t> full_packet_jumbo;
+            std::vector<uint8_t> full_packet_ac1an0;
 
-            packet_configuration packet_config_;
-            packet_config_.id     = 1338;
-            packet_config_.q_name = std::string("jumbo1-") 
-            + hex_address 
-            + "-email-jxm959-case-edu.yumi.ipl.eecs.case.edu";
+            const std::string question_name_jumbo = std::string("jumbo1-") 
+            + query_property.name;
 
-            packet_factory_.make_packet(
-                PacketTypes::UDP_QUERY,
-                packet_config_,
-                full_packet
-            );
+            const std::string question_name_ac1an0 = std::string("ac1an0-") + question_name_jumbo;
 
-            main_socket_.async_send_to(
-                boost::asio::buffer(full_packet),
-                sender,
-                boost::bind(
-                    &UDPListener::handle_send,
-                    this,
-                    full_packet,
-                    boost::asio::placeholders::error,
-                    boost::asio::placeholders::bytes_transferred
-                )
-            );
+            const std::string question_for_tcp = std::string("t-") 
+            + query_property.name;
 
-            SEND_TO_TCP_SCANNER(question_name)
-            UDP_SCANNER_NORMAL_LOG(udp_normal_log_, sender, question_id, "ok")
+            SEND_OUT_PACKET(jumbo,  full_packet_jumbo,  question_name_jumbo,  sender)
+            SEND_OUT_PACKET(ac1an0, full_packet_ac1an0, question_name_ac1an0, sender)
+
+            SEND_TO_TCP_SCANNER(question_for_tcp)
+            UDP_SCANNER_NORMAL_LOG(udp_normal_log_, sender, query_property.question_id, "ok")
         }
         else
         {
@@ -180,11 +171,11 @@ void UDPListener::handle_receive(
             {
                 // send to tcp scanner
                 SEND_TO_TCP_SCANNER(question_name)
-                UDP_SCANNER_TRUNCATE_LOG(udp_truncate_log_, sender, question_id, "tc_ok")
+                UDP_SCANNER_TRUNCATE_LOG(udp_truncate_log_, sender, query_property.question_id, "tc_ok")
             }
             else // is a jumbo query but is not truncated
             {
-                UDP_SCANNER_TRUNCATE_LOG(udp_truncate_log_, sender, question_id, "tc_fail")
+                UDP_SCANNER_TRUNCATE_LOG(udp_truncate_log_, sender, query_property.question_id, "tc_fail")
             }
         }
     }
