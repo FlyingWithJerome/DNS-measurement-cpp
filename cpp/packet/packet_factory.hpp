@@ -87,6 +87,10 @@ class ResponseFactory
 
         static constexpr size_t udp_header_size    = 8;
         static constexpr size_t tcp_dns_size_shift = 2;
+        static constexpr char short_msg[] = 
+        "an Internet scanning on DNS in IPv4 space, "
+        "carried out by Jerome Mao and Professor Michael Rabinovich "
+        "in Case Western Reserve University (jxm959*at*case.edu)";
 
         template <typename input_iter>
         static std::string form_txt_string(

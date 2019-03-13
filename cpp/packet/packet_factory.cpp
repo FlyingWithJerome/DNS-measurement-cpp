@@ -3,6 +3,8 @@
 constexpr size_t QueryFactory::udp_header_size;
 constexpr size_t QueryFactory::tcp_dns_size_shift;
 
+constexpr char   ResponseFactory::short_msg[];
+
 void QueryFactory::make_packet(
     const PacketTypes& packet_type,
     const packet_configuration& packet_config,
@@ -136,7 +138,7 @@ ResponseFactory::ResponseFactory()
 
     std::cout << "[Packet Factory] txt answer size: " << txt_answer.size() << std::endl;
 
-    short_txt_answer = std::string("Ito Marika (My favorite member in Nogizaka46)");
+    short_txt_answer = std::string(short_msg);
     short_txt_answer.insert(0, 1, (char)short_txt_answer.size());
 }
 
