@@ -88,6 +88,12 @@ class ResponseFactory
         static constexpr size_t udp_header_size    = 8;
         static constexpr size_t tcp_dns_size_shift = 2;
 
+        template <typename input_iter>
+        static std::string form_txt_string(
+            input_iter start,
+            input_iter end
+        );
+
     private:
         void make_udp_response(
             const Tins::DNS&,

@@ -127,21 +127,42 @@ ResponseFactory::ResponseFactory()
         );
     }
 
-    // std::ifstream file("some_text.txt");
-    // txt_answer.assign(
-    //     std::istreambuf_iterator<char>(file),
-    //     std::istreambuf_iterator<char>()
-    // );
+    std::ifstream file("cpp/server/some_text.txt");
+
+    txt_answer = ResponseFactory::form_txt_string(
+        std::istreambuf_iterator<char>(file),
+        std::istreambuf_iterator<char>()
+    );
+
+    std::cout << "[Packet Factory] txt answer size: " << txt_answer.size() << std::endl;
 
     short_txt_answer = std::string("Ito Marika (My favorite member in Nogizaka46)");
     short_txt_answer.insert(0, 1, (char)short_txt_answer.size());
+}
 
-    txt_answer.reserve(4600);
-
-    for (int i = 0; i < 100; i++)
+template <typename input_iter>
+std::string ResponseFactory::form_txt_string(
+    input_iter start,
+    input_iter end
+)
+{
+    std::string result;
+    const int max_size = 255;
+    std::string txt_segment;
+    while ( start != end )
     {
-        txt_answer += short_txt_answer;
+        while (txt_segment.size() < max_size and start != end )
+        {   
+            txt_segment += (*start++);
+        }
+
+        txt_segment.insert(0, 1, (char)txt_segment.size());
+        result.append(txt_segment);
+        txt_segment.clear();
     }
+
+    std::replace(result.begin(), result.end(), '\n', ' ');
+    return result;
 }
 
 void ResponseFactory::make_packet(
@@ -260,48 +281,15 @@ void ResponseFactory::make_tcp_response(
         switch (query_type)
         {
             case Tins::DNS::QueryType::A:
-                for(const std::string& answer : tcp_answers)
-                {
-                    response.add_answer(
-                        Tins::DNS::resource(
-                            query_property.name,
-                            answer,
-                            query_type,
-                            query_class,
-                            DNS_RESOURCE_TTL
-                        )
-                    );
-                }
+                APPEND_ANSWER(tcp, tcp_answers.size())
                 break;
             
             case Tins::DNS::QueryType::NS:
-                for(const std::string& answer : ns_answers)
-                {
-                    response.add_answer(
-                        Tins::DNS::resource(
-                            query_property.name,
-                            answer,
-                            query_type,
-                            query_class,
-                            DNS_RESOURCE_TTL
-                        )
-                    );
-                }
+                APPEND_ANSWER(ns, ns_answers.size())
                 break;
 
             case Tins::DNS::QueryType::MX:
-                for(const std::string& answer : ns_answers)
-                {
-                    response.add_answer(
-                        Tins::DNS::resource(
-                            query_property.name,
-                            answer,
-                            query_type,
-                            query_class,
-                            DNS_RESOURCE_TTL
-                        )
-                    );
-                }
+                APPEND_ANSWER(ns, ns_answers.size())
                 break;
 
             case Tins::DNS::QueryType::TXT:
