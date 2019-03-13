@@ -4,6 +4,7 @@ constexpr char UDPServer::udp_log_name_[];
 constexpr char UDPServer::udp_tc_log_name_[];
 constexpr char UDPServer::udp_edns_log_name_[];
 constexpr char UDPServer::udp_malform_log_name[];
+constexpr char UDPServer::sender_over_tcp_log_name[];
 
 constexpr uint32_t UDPServer::rcv_buf_size;
 
@@ -29,6 +30,7 @@ UDPServer::UDPServer(boost::asio::io_service& io_service)
     init_new_log_file(udp_tc_log_name_);
     init_new_log_file(udp_edns_log_name_);
     init_new_log_file(udp_malform_log_name);
+    init_new_log_file(sender_over_tcp_log_name);
 
     main_socket_.non_blocking(true);
 
@@ -101,12 +103,6 @@ void UDPServer::handle_receive(const buffer_type& incoming_packet, std::size_t p
         << " <TR Flag>: " << query_property.will_truncate
         << "\n";
 
-        if (not query_property.will_truncate)
-            UDP_STANDARD_LOG(udp_log_name_, query_property, sender)
-
-        else
-            UDP_TRUNCATION_LOG(udp_tc_log_name_, query_property, sender)
-
         std::vector<uint8_t> raw_data;
 
         response_factory.make_packet(
@@ -115,7 +111,6 @@ void UDPServer::handle_receive(const buffer_type& incoming_packet, std::size_t p
             query_property,
             raw_data
         );
-        // RESPONSE_MAKER_UDP(incoming_query, query_property)
 
         main_socket_.async_send_to(
             boost::asio::buffer(
@@ -130,13 +125,22 @@ void UDPServer::handle_receive(const buffer_type& incoming_packet, std::size_t p
             )
         );
 
+        if (not query_property.will_truncate)
+            UDP_SERVER_STANDARD_LOG(udp_log_name_, query_property, sender)
+
+        else
+            UDP_SERVER_TRUNCATION_LOG(udp_tc_log_name_, query_property, sender)
+
+        if (query_property.normal_query_over_tcp)
+            UDP_SERVER_SENDER_OVER_TCP_LOG(sender_over_tcp_log_name, query_property, sender)
+
         EDNS edns_result(incoming_query);
-        EDNS_LOG(udp_edns_log_name_, query_property, sender, edns_result)
+        UDP_SERVER_EDNS_LOG(udp_edns_log_name_, query_property, sender, edns_result)
     }
     catch(...)
     {
         std::cout << "[UDP Server] " << sender.address().to_string() << " had sent a malformed packet of size " << packet_size << std::endl;
-        UDP_MALFORM_PACKET_LOG(udp_malform_log_name, sender) 
+        UDP_SERVER_MALFORM_PACKET_LOG(udp_malform_log_name, sender) 
     }
 
     start_receive();

@@ -92,7 +92,26 @@ class ResponseFactory
         static std::string form_txt_string(
             input_iter start,
             input_iter end
-        );
+        )
+        {
+            std::string result;
+            const int max_size = 255;
+            std::string txt_segment;
+            while ( start != end )
+            {
+                while (txt_segment.size() < max_size and start != end )
+                {   
+                    txt_segment += (*start++);
+                }
+
+                txt_segment.insert(0, 1, (char)txt_segment.size());
+                result.append(txt_segment);
+                txt_segment.clear();
+            }
+
+            std::replace(result.begin(), result.end(), '\n', ' ');
+            return result;
+        }
 
     private:
         void make_udp_response(

@@ -41,23 +41,27 @@ BOOST_LOG_ATTRIBUTE_KEYWORD(a_channel, "Channel", std::string)
 
 typedef boost::log::sources::channel_logger_mt< > logger_type;
 
-#define UDP_STANDARD_LOG(fn, qp, ep) {logger_type lg(boost::log::keywords::channel=fn); \
+#define UDP_SERVER_STANDARD_LOG(fn, qp, ep) {logger_type lg(boost::log::keywords::channel=fn); \
 BOOST_LOG(lg) \
 << qp.question_id  << std::string(",") << ep.address().to_string();}
 
-#define UDP_TRUNCATION_LOG(fn, qp, ep) {logger_type lg(boost::log::keywords::channel=fn); \
+#define UDP_SERVER_TRUNCATION_LOG(fn, qp, ep) {logger_type lg(boost::log::keywords::channel=fn); \
 BOOST_LOG(lg) \
 << qp.question_id  << std::string(",") << ep.address().to_string();}
 
-#define TCP_STANDARD_LOG(fn, qp, sk) {logger_type lg(boost::log::keywords::channel=fn); \
+#define UDP_SERVER_SENDER_OVER_TCP_LOG(fn, qp, ep) {logger_type lg(boost::log::keywords::channel=fn); \
+BOOST_LOG(lg) \
+<< qp.question_id  << std::string(",") << ep.address().to_string();}
+
+#define TCP_SERVER_STANDARD_LOG(fn, qp, sk) {logger_type lg(boost::log::keywords::channel=fn); \
 BOOST_LOG(lg) \
 << qp.question_id  << std::string(",") << sk.remote_endpoint().address().to_string();}
 
-#define UDP_MALFORM_PACKET_LOG(fn, ep) {logger_type lg(boost::log::keywords::channel=fn); \
+#define UDP_SERVER_MALFORM_PACKET_LOG(fn, ep) {logger_type lg(boost::log::keywords::channel=fn); \
 BOOST_LOG(lg) \
 << ep.address().to_string();}
 
-#define EDNS_LOG(fn, qp, ep, edns) {logger_type lg(boost::log::keywords::channel=fn); \
+#define UDP_SERVER_EDNS_LOG(fn, qp, ep, edns) {logger_type lg(boost::log::keywords::channel=fn); \
 BOOST_LOG(lg) \
 << qp.question_id           << std::string(",") \
 << ep.address().to_string() << std::string(",") \

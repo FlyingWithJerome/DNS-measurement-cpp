@@ -93,7 +93,7 @@ void TCPConnection::handle_reactor_receive(
         )
     );
 
-    TCP_STANDARD_LOG(file_name_, query_property, main_socket_)
+    TCP_SERVER_STANDARD_LOG(file_name_, query_property, main_socket_)
 }
 
 void TCPConnection::handle_send(
