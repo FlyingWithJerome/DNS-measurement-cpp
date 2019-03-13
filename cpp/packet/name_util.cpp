@@ -121,12 +121,7 @@ NameUtilities::QueryProperty::QueryProperty(const std::string& raw_name)
         }
     }
 
-    this->is_authoritative = NameUtilities::check_authoritative(name);
-    // this->question_id      = NameUtilities::get_question_id(name);
-    // this->jumbo_type       = NameUtilities::get_jumbo_type(name);
-
-    // this->normal_query_over_tcp = (name[0] == 't' and name[1] == '-');
-
-    this->will_truncate    = this->jumbo_type != NameUtilities::JumboType::no_jumbo and TRUNCATION_TRICK;
+    is_authoritative = NameUtilities::check_authoritative(name);
+    will_truncate    = (jumbo_type != NameUtilities::JumboType::no_jumbo and TRUNCATION_TRICK);
 }
 
