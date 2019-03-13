@@ -105,6 +105,9 @@ class ResponseFactory
         std::vector<std::string> tcp_answers;
         std::vector<std::string> ns_answers;
 
+        std::string txt_answer;
+        std::string short_txt_answer;
+
         const char* ns_server_names[26] = {
             "Alfa",
             "Bravo",

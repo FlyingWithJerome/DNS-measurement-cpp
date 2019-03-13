@@ -126,6 +126,22 @@ ResponseFactory::ResponseFactory()
             std::string(ns_server_names[num_of_resource]) + "-yumi.ipl.eecs.case.edu"
         );
     }
+
+    // std::ifstream file("some_text.txt");
+    // txt_answer.assign(
+    //     std::istreambuf_iterator<char>(file),
+    //     std::istreambuf_iterator<char>()
+    // );
+
+    short_txt_answer = std::string("Ito Marika (My favorite member in Nogizaka46)");
+    short_txt_answer.insert(0, 1, (char)short_txt_answer.size());
+
+    txt_answer.reserve(4600);
+
+    for (int i = 0; i < 100; i++)
+    {
+        txt_answer += short_txt_answer;
+    }
 }
 
 void ResponseFactory::make_packet(
@@ -190,6 +206,15 @@ void ResponseFactory::make_udp_response(
                     break;
 
                 case Tins::DNS::QueryType::TXT:
+                    response.add_answer(
+                        Tins::DNS::resource(
+                            query_property.name,
+                            short_txt_answer,
+                            query_type,
+                            query_class,
+                            DNS_RESOURCE_TTL
+                        )
+                    );
                     break;
 
                 default:
@@ -280,6 +305,15 @@ void ResponseFactory::make_tcp_response(
                 break;
 
             case Tins::DNS::QueryType::TXT:
+                response.add_answer(
+                    Tins::DNS::resource(
+                        query_property.name,
+                        txt_answer,
+                        query_type,
+                        query_class,
+                        DNS_RESOURCE_TTL
+                    )
+                );
                 break;
 
             default:
