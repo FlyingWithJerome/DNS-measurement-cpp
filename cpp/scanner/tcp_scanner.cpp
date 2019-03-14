@@ -1,6 +1,7 @@
 #include "tcp_scanner.hpp"
 
-constexpr char TCPScanner::tcp_normal_log_[];
+constexpr char   TCPScanner::tcp_normal_log_[];
+constexpr size_t TCPScanner::largest_tcp_response_size;
 
 TCPScanner::TCPScanner()
 : work(
@@ -74,6 +75,7 @@ void TCPScanner::perform_tcp_query(
 )
 {
     TCPClient client(ip_address.c_str());
+    NameUtilities::QueryProperty query_property(question);
 
     if (client.has_bad_fd)
     {
@@ -82,7 +84,7 @@ void TCPScanner::perform_tcp_query(
 
     if (not client.connect())
     {
-        TCP_SCANNER_NORMAL_LOG(tcp_normal_log_, ip_address.c_str(), 0, -1, "connect_timeout")
+        TCP_SCANNER_NORMAL_LOG(tcp_normal_log_, ip_address.c_str(), query_property, -1, "connect_timeout")
         return;
     }
     
@@ -99,11 +101,15 @@ void TCPScanner::perform_tcp_query(
         full_packet
     );
 
-    client.send(full_packet);
+    if (client.send(full_packet) <= 0)
+    {
+        TCP_SCANNER_NORMAL_LOG(tcp_normal_log_, ip_address.c_str(), query_property, -1, "fail_to_send")
+        return;
+    }
     
     if (client.receive(response_packet) <= 0)
     {
-        TCP_SCANNER_NORMAL_LOG(tcp_normal_log_, ip_address.c_str(), 0, -1, "recv_timeout")
+        TCP_SCANNER_NORMAL_LOG(tcp_normal_log_, ip_address.c_str(), query_property, -1, "recv_timeout")
         return;
     }
 
@@ -114,14 +120,12 @@ void TCPScanner::perform_tcp_query(
         std::cout << "[TCP Scanner] packet name: " << readable_response.answers()[0].dname() << "\n";
 
         std::string result;
-        NameUtilities::QueryProperty query_property(question);
-
         inspect_response(readable_response, query_property, result);
 
         TCP_SCANNER_NORMAL_LOG(
             tcp_normal_log_, 
             ip_address.c_str(), 
-            query_property.question_id, 
+            query_property, 
             readable_response.rcode(), 
             result.c_str()
         )
@@ -140,7 +144,11 @@ void TCPScanner::perform_tcp_query(
     }
 }
 
-void TCPScanner::inspect_response(const Tins::DNS& response, const NameUtilities::QueryProperty& query_property, std::string& result_str) noexcept
+void TCPScanner::inspect_response(
+    const Tins::DNS& response, 
+    const NameUtilities::QueryProperty& query_property, 
+    std::string& result_str
+) noexcept
 {
     if (response.rcode() != 0)
     {
@@ -155,19 +163,18 @@ void TCPScanner::inspect_response(const Tins::DNS& response, const NameUtilities
         return;
     }
 
-    if (response.answers_count() != 100)
+    if (response.answers_count() != 100 and not query_property.normal_query_over_tcp)
     {
         // the number of answers is not 100, write down the actual answer count
         std::stringstream result_builder;
         result_builder 
         << "wrong_number_of_entries("
-        << response.answers_count()
+        << response.answers().size()
         << "/100)";
 
         result_str = result_builder.str();
         return;
     }
-
     result_str = "answer_ok";
 }
 
@@ -228,12 +235,7 @@ int TCPScanner::TCPClient::connect() noexcept
 
 int TCPScanner::TCPClient::send(const std::vector<uint8_t>& packet) noexcept
 {
-    int status = ::send(
-        socket_fd,
-        packet.data(),
-        packet.size(),
-        0
-    );
+    int status = ::send(socket_fd, packet.data(), packet.size(), 0);
 
     if (status < 0)
         std::cout << "[Send function] " << strerror(errno) << std::endl;        
@@ -243,18 +245,14 @@ int TCPScanner::TCPClient::send(const std::vector<uint8_t>& packet) noexcept
 
 int TCPScanner::TCPClient::receive(std::vector<uint8_t>& packet)
 {
-    packet.resize(3000);
+    packet.resize(TCPScanner::largest_tcp_response_size);
 
     int retval = select(socket_fd+1, &socket_set, nullptr, nullptr, &read_timeout);
     
     if (retval > 0)
     {
-        int recv_size = ::recv(
-            socket_fd,
-            &packet[0],
-            3000,
-            0
-        );
+        int recv_size = ::recv(socket_fd, &packet[0], TCPScanner::largest_tcp_response_size, 0);
+
         if (recv_size > 0)
         {
             packet.resize(recv_size);
@@ -275,56 +273,3 @@ TCPScanner::TCPClient::~TCPClient()
     close(socket_fd);
 }
 
-// int main()
-// {
-//     std::cout << "[TCP Scanner] TCP Scanner started\n";
-//     TCPScanner scanner;
-//     scanner.service_loop();
-//     std::cout << "[TCP Scanner] TCP Scanner exit;\n";
-// //     return 0;
-// //     // boost::asio::ip::tcp::endpoint remote_server_(
-// //     //     boost::asio::ip::address::from_string("8.8.4.4"),
-// //     //     53
-// //     // );
-// //     // TCPScanner::TCPClient client("8.8.3.3");
-
-// //     // client.connect();
-
-// //     // if (not client.is_connected)
-// //     // {
-// //     //     std::cout << "client had not been connected" << std::endl;
-// //     //     return 1;
-// //     // }
-
-// //     // std::string question = "nogizaka.yumi.ipl.eecs.case.edu";
-// //     // std::vector<uint8_t> packet;
-
-// //     // CRAFT_FULL_QUERY_TCP(question, packet)
-
-// //     // std::vector<uint8_t> response;
-
-// //     // int send_bytes;
-// //     // int recv_bytes;
-// //     // if ((send_bytes = client.send(packet)) < 0)
-// //     // {
-// //     //     std::cout << "send error" << std::endl;
-// //     // }
-// //     // else
-// //     // {
-// //     //     std::cout << "send bytes " << send_bytes << std::endl;
-// //     // }
-    
-
-// //     // if ((recv_bytes = client.receive(response)) < 0)
-// //     // {
-// //     //     std::cout << "recv error" << std::endl;
-// //     // }
-// //     // else
-// //     // {
-// //     //     std::cout << "recv bytes " << recv_bytes << std::endl;
-// //     // }
-
-// //     // std::cout << "has a response of size " << response.size() << std::endl;
-
-//     return 0;
-// }

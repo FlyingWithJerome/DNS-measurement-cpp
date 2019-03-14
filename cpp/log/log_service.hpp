@@ -43,19 +43,19 @@ typedef boost::log::sources::channel_logger_mt< > logger_type;
 
 #define UDP_SERVER_STANDARD_LOG(fn, qp, ep) {logger_type lg(boost::log::keywords::channel=fn); \
 BOOST_LOG(lg) \
-<< qp.question_id  << std::string(",") << ep.address().to_string();}
+<< qp.question_id  << "," << ep.address().to_string();}
 
 #define UDP_SERVER_TRUNCATION_LOG(fn, qp, ep) {logger_type lg(boost::log::keywords::channel=fn); \
 BOOST_LOG(lg) \
-<< qp.question_id  << std::string(",") << ep.address().to_string();}
+<< qp.question_id  << "," << ep.address().to_string();}
 
 #define UDP_SERVER_SENDER_OVER_TCP_LOG(fn, qp, ep) {logger_type lg(boost::log::keywords::channel=fn); \
 BOOST_LOG(lg) \
-<< qp.question_id  << std::string(",") << ep.address().to_string();}
+<< qp.question_id  << "," << ep.address().to_string();}
 
 #define TCP_SERVER_STANDARD_LOG(fn, qp, sk) {logger_type lg(boost::log::keywords::channel=fn); \
 BOOST_LOG(lg) \
-<< qp.question_id  << std::string(",") << sk.remote_endpoint().address().to_string();}
+<< qp.question_id  << "," << sk.remote_endpoint().address().to_string();}
 
 #define UDP_SERVER_MALFORM_PACKET_LOG(fn, ep) {logger_type lg(boost::log::keywords::channel=fn); \
 BOOST_LOG(lg) \
@@ -63,25 +63,25 @@ BOOST_LOG(lg) \
 
 #define UDP_SERVER_EDNS_LOG(fn, qp, ep, edns) {logger_type lg(boost::log::keywords::channel=fn); \
 BOOST_LOG(lg) \
-<< qp.question_id           << std::string(",") \
-<< ep.address().to_string() << std::string(",") \
-<< edns.support_DNSSEC      << std::string(",") \
-<< edns.support_EDNS0       << std::string(",") \
-<< edns.support_ECS         << std::string(",") \
-<< edns.EDNS0_payload       << std::string(",") \
-<< edns.ECS_subnet_address  << std::string(",") \
+<< qp.question_id           << "," \
+<< ep.address().to_string() << "," \
+<< edns.support_DNSSEC      << "," \
+<< edns.support_EDNS0       << "," \
+<< edns.support_ECS         << "," \
+<< edns.EDNS0_payload       << "," \
+<< edns.ECS_subnet_address  << "," \
 << edns.ECS_subnet_mask;}
 
 #define UDP_SCANNER_NORMAL_LOG(fn, ep, qid, rcode) {logger_type lg(boost::log::keywords::channel=fn); \
 BOOST_LOG(lg) \
-<< qid                      << std::string(",") \
-<< ep.address().to_string() << std::string(",") \
+<< qid                      << "," \
+<< ep.address().to_string() << "," \
 << rcode;}
 
 #define UDP_SCANNER_TRUNCATE_LOG(fn, ep, qid, tc) {logger_type lg(boost::log::keywords::channel=fn); \
 BOOST_LOG(lg) \
-<< qid                      << std::string(",") \
-<< ep.address().to_string() << std::string(",") \
+<< qid                      << "," \
+<< ep.address().to_string() << "," \
 << tc;}
 
 #define UDP_SCANNER_BAD_RESPONSE_LOG(fn, ep, qid, rcode, jumbo, ancount, msg) {logger_type lg(boost::log::keywords::channel=fn); \
@@ -105,16 +105,13 @@ BOOST_LOG(lg) << log_entry;}
 // << ancount                  << std::string(",") \
 // << msg;}
 
-#define TCP_SCANNER_NORMAL_LOG(fn, addr, qid, rcode, msg) {logger_type lg(boost::log::keywords::channel=fn); \
-char log_entry[100]; \
-sprintf( \
-  log_entry, \
-  "%u,%s,%d,%s", \
-  qid, \
-  addr, \
-  rcode, \
-  msg); \
+#define TCP_SCANNER_NORMAL_LOG(fn, addr, qp, rcode, msg) {logger_type lg(boost::log::keywords::channel=fn); \
 BOOST_LOG(lg) \
-<< log_entry;}
+<< qp.question_id                << "," \
+<< addr                          << "," \
+<< (int)rcode                    << "," \
+<< (int)qp.jumbo_type            << "," \
+<< (int)qp.normal_query_over_tcp << "," \
+<< msg;}
 
 #endif

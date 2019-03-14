@@ -46,6 +46,7 @@ class TCPScanner
             std::string&
         ) noexcept;
 
+        static constexpr size_t largest_tcp_response_size = 4500;
         static constexpr char tcp_normal_log_[] = "tcp_scanner_normal.log";
 
     private:
