@@ -30,7 +30,7 @@ EDNS::EDNS(const Tins::DNS& incoming_packet)
 
                 support_ECS = op_code == 8;
 
-                if (support_ECS)
+                if (support_ECS and family == 1)
                 {
                     ECS_subnet_mask = (int)ECS_data[6];
 

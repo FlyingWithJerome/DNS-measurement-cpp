@@ -80,11 +80,7 @@ void TCPScanner::perform_tcp_query(
         return;
     }
 
-    client.connect();
-
-    uint32_t question_id = NameUtilities::get_question_id(question);
-
-    if (not client.is_connected)
+    if (not client.connect())
     {
         TCP_SCANNER_NORMAL_LOG(tcp_normal_log_, ip_address.c_str(), 0, -1, "connect_timeout")
         return;
@@ -102,7 +98,6 @@ void TCPScanner::perform_tcp_query(
         packet_config,
         full_packet
     );
-    // CRAFT_FULL_QUERY_TCP(question, full_packet)
 
     client.send(full_packet);
     
@@ -119,12 +114,14 @@ void TCPScanner::perform_tcp_query(
         std::cout << "[TCP Scanner] packet name: " << readable_response.answers()[0].dname() << "\n";
 
         std::string result;
-        inspect_response(readable_response, result);
+        NameUtilities::QueryProperty query_property(question);
+
+        inspect_response(readable_response, query_property, result);
 
         TCP_SCANNER_NORMAL_LOG(
             tcp_normal_log_, 
             ip_address.c_str(), 
-            question_id, 
+            query_property.question_id, 
             readable_response.rcode(), 
             result.c_str()
         )
@@ -143,7 +140,7 @@ void TCPScanner::perform_tcp_query(
     }
 }
 
-void TCPScanner::inspect_response(const Tins::DNS& response, std::string& result_str)
+void TCPScanner::inspect_response(const Tins::DNS& response, const NameUtilities::QueryProperty& query_property, std::string& result_str) noexcept
 {
     if (response.rcode() != 0)
     {
@@ -210,7 +207,7 @@ TCPScanner::TCPClient::TCPClient(
     }
 }
 
-int TCPScanner::TCPClient::connect()
+int TCPScanner::TCPClient::connect() noexcept
 {
     int status = ::connect(
         socket_fd,

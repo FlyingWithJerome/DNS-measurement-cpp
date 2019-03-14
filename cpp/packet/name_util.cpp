@@ -31,7 +31,7 @@ uint32_t NameUtilities::get_question_id(const std::string& question)
         return INVALID_ID;
 }
 
-NameUtilities::JumboType NameUtilities::get_jumbo_type(const std::string& question)
+NameUtilities::JumboType NameUtilities::get_jumbo_type(const std::string& question) noexcept
 {
     // if (signal_word.compare(question.substr(0, signal_word.size())) != 0)
     //     return NameUtilities::JumboType(no_jumbo);
@@ -51,7 +51,7 @@ NameUtilities::JumboType NameUtilities::get_jumbo_type(const std::string& questi
     }
 }
 
-void NameUtilities::get_answer_config(const std::string& name, uint8_t& expect_ac, uint8_t& expect_num_ans)
+void NameUtilities::get_answer_config(const std::string& name, uint8_t& expect_ac, uint8_t& expect_num_ans) noexcept
 {
     if ( std::strcmp(name.substr(0, 2).c_str(), "ac") != 0 )
     {

@@ -57,9 +57,9 @@ namespace NameUtilities
     /* get the question ID from the question */
     uint32_t get_question_id(const std::string&);
     /* get the jumbo type from the question */
-    JumboType get_jumbo_type(const std::string&);
+    JumboType get_jumbo_type(const std::string&) noexcept;
     /* get the expect answer count and number of answers */
-    void get_answer_config(const std::string&, uint8_t& expect_ac, uint8_t& expect_num_ans);
+    void get_answer_config(const std::string&, uint8_t& expect_ac, uint8_t& expect_num_ans) noexcept;
 };
 
 #endif

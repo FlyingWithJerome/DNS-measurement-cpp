@@ -179,6 +179,8 @@ void ResponseFactory::make_udp_response(
 
     if (query_property.is_authoritative)
     {
+        response.authoritative_answer(1);
+
         for(const Tins::DNS::query& query : question.queries())
         {
             response.add_query(query);
@@ -247,6 +249,8 @@ void ResponseFactory::make_tcp_response(
 
     if (query_property.is_authoritative)
     {
+        response.authoritative_answer(1);
+        
         for(const Tins::DNS::query& query : question.queries())
         {
             response.add_query(query);

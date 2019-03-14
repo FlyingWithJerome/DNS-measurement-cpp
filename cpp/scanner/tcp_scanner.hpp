@@ -40,7 +40,11 @@ class TCPScanner
 
         void perform_tcp_query(const std::string&, const std::string&);
 
-        static void inspect_response(const Tins::DNS&, std::string&);
+        static void inspect_response(
+            const Tins::DNS&, 
+            const NameUtilities::QueryProperty&,
+            std::string&
+        ) noexcept;
 
         static constexpr char tcp_normal_log_[] = "tcp_scanner_normal.log";
 
@@ -64,7 +68,7 @@ class TCPScanner
 
                 ~TCPClient();
 
-                int connect();
+                int connect() noexcept;
                 int send(const std::vector<uint8_t>&) noexcept;
                 int receive(std::vector<uint8_t>&);
 
