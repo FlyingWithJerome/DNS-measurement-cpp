@@ -25,6 +25,7 @@
 #define SEND_OUT_PACKET(alias, packet_carrier, question_name, sender) packet_configuration packet_config_##alias; \
     packet_config_##alias.id     = 1338; \
     packet_config_##alias.q_name = question_name; \
+    packet_config_##alias.query_type = QueryType::MX; \
     packet_factory_.make_packet( \
         PacketTypes::UDP_QUERY, \
         packet_config_##alias, \

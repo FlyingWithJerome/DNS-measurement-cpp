@@ -57,8 +57,9 @@ int UDPSender::start_send() noexcept
             std::string question = hex_address + "-email-jxm959-case-edu.yumi.ipl.eecs.case.edu";
 
             packet_configuration packet_config_;
-            packet_config_.id     = 1338;
-            packet_config_.q_name = hex_address + "-email-jxm959-case-edu.yumi.ipl.eecs.case.edu";
+            packet_config_.id         = 1338;
+            packet_config_.query_type = QueryType::MX;
+            packet_config_.q_name     = hex_address + "-email-jxm959-case-edu.yumi.ipl.eecs.case.edu";
 
             packet_factory_.make_packet(
                 PacketTypes::RAW_QUERY,
@@ -76,7 +77,7 @@ int UDPSender::start_send() noexcept
 
             while(not bucket_.consume(1)) // flow control with token bucket
             {
-                asm("pause");
+                std::this_thread::yield();
             }
 
             if (sender_wait_signal_)

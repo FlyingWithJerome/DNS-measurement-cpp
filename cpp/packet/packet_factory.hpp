@@ -32,12 +32,14 @@ enum PacketTypes {
     TCP_RESPONSE,
 };
 
+using QueryType = Tins::DNS::QueryType;
+
 typedef struct{
-    uint32_t    id;
-    uint16_t    query_type;
-    int         expect_answer_count;
-    int         actual_num_ans;
-    std::string q_name;
+    uint32_t             id;
+    Tins::DNS::QueryType query_type;
+    int                  expect_answer_count;
+    int                  actual_num_ans;
+    std::string          q_name;
     
 } packet_configuration;
 

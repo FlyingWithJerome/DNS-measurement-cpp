@@ -21,9 +21,6 @@
 #include <boost/asio/ip/basic_endpoint.hpp>
 #include <boost/interprocess/ipc/message_queue.hpp>
 
-
-#include <tins/dns.h>
-
 #include "token_bucket.hpp"
 #include "../packet/packet_factory.hpp"
 

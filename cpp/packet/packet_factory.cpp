@@ -39,7 +39,7 @@ void QueryFactory::make_udp_query(
     query.add_query(
         Tins::DNS::query(
             packet_config.q_name,
-            Tins::DNS::QueryType(Tins::DNS::QueryType::A),
+            packet_config.query_type,
             Tins::DNS::QueryClass(Tins::DNS::QueryClass::INTERNET)
         )
     );
@@ -57,7 +57,7 @@ void QueryFactory::make_tcp_query(
     query.add_query(
         Tins::DNS::query(
             packet_config.q_name,
-            Tins::DNS::QueryType(Tins::DNS::QueryType::A),
+            packet_config.query_type,
             Tins::DNS::QueryClass(Tins::DNS::QueryClass::INTERNET)
         )
     );
@@ -85,7 +85,7 @@ void QueryFactory::make_raw_query(
     query.add_query(
         Tins::DNS::query(
             packet_config.q_name,
-            Tins::DNS::QueryType(Tins::DNS::QueryType::A),
+            packet_config.query_type,
             Tins::DNS::QueryClass(Tins::DNS::QueryClass::INTERNET)
         )
     );

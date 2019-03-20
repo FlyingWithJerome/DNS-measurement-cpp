@@ -78,8 +78,8 @@ void UDPListener::reactor_read(const boost::system::error_code& error_code)
             std::vector<uint8_t> new_arrival(available_packet_size);
 
             available_packet_size = main_socket_.receive_from(
-            boost::asio::buffer(new_arrival),
-            sender_info
+                boost::asio::buffer(new_arrival),
+                sender_info
             );
 
             new_arrival.resize(available_packet_size);
@@ -99,7 +99,6 @@ void UDPListener::handle_receive(
 )
 {
     Tins::DNS incoming_response;
-    boost::thread::id thread_id = boost::this_thread::get_id();
 
     try
     {
@@ -112,9 +111,7 @@ void UDPListener::handle_receive(
     }
 
     std::cout 
-    << "[UDP Listener] (thread id:" 
-    << thread_id
-    << ") Address: " 
+    << "[UDP Listener] Address: " 
     << sender.address().to_string()
     // << " Name: "
     // << incoming_response.queries()[0].dname()
@@ -132,20 +129,22 @@ void UDPListener::handle_receive(
         
         if(query_property.jumbo_type == NameUtilities::JumboType::no_jumbo) // not a jumbo query, will start a jumbo query
         {
-            if (incoming_response.answers()[0].data() != "192.168.0.0")
-            {
-                // write down the answer error
-                UDP_SCANNER_BAD_RESPONSE_LOG(
-                    udp_bad_response_log_,
-                    sender,
-                    query_property.question_id,
-                    0,
-                    (int)query_property.jumbo_type,
-                    incoming_response.answers_count(),
-                    "answer error"
-                )
-                goto End;
-            }
+            std::cout << "[UDP Listener] answer: " << incoming_response.answers()[0].data() << std::endl;
+
+            // if (incoming_response.answers()[0].data() != "192.168.0.0")
+            // {
+            //     // write down the answer error
+            //     UDP_SCANNER_BAD_RESPONSE_LOG(
+            //         udp_bad_response_log_,
+            //         sender,
+            //         query_property.question_id,
+            //         0,
+            //         (int)query_property.jumbo_type,
+            //         incoming_response.answers_count(),
+            //         "answer error"
+            //     )
+            //     goto End;
+            // }
 
             std::vector<uint8_t> full_packet_jumbo;
             std::vector<uint8_t> full_packet_ac1an0;
