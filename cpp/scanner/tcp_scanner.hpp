@@ -27,7 +27,6 @@
 #include "../log/log_service.hpp"
 #include "../packet/name_util.hpp"
 #include "../packet/packet_factory.hpp"
-#include "query_commons.hpp"
 #include "message_queue_packet.hpp"
 
 class TCPScanner

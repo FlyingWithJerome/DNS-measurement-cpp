@@ -119,7 +119,7 @@ class UDPSender
 
         QueryFactory packet_factory_;
         TokenBucket bucket_;
-        boost::asio::deadline_timer normal_timer;
+        boost::asio::deadline_timer queue_overflow_sleeper;
 
 };
 

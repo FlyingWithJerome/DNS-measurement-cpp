@@ -21,6 +21,8 @@
 #include "message_queue_packet.hpp"
 #include "monitor.hpp"
 
+#define MESSAGE_QUEUE_SIZE 100000
+
 typedef boost::interprocess::message_queue msg_q;
 
 void keyboard_interruption_handler_child(int);
@@ -31,7 +33,7 @@ int launch_udp_scanners(const std::string&, std::shared_ptr<msg_q>&, std::uint32
 void keyboard_interruption_handler_child(int signal)
 {
     std::cout << "[Scanner General] Going to Exit (Child)...\n";
-    std::exit(1);
+    std::exit(EXIT_SUCCESS);
 }
 
 void keyboard_interruption_handler_parent(int signal)
@@ -63,7 +65,7 @@ void keyboard_interruption_handler_parent(int signal)
     {
         std::cout << "[Scanner General] Child Does not exit normally (unknown status)\n";
     }
-    std::exit(1);
+    std::exit(EXIT_SUCCESS);
 }
 
 #define REGISTER_INTERRUPTION(identity) struct sigaction interruption_handler; \
@@ -91,7 +93,13 @@ int launch_udp_scanners(
 
     boost::thread_group thread_pool_;
 
-    UDPSender   sender(file_path, send_rate, io_service_sender, mq, sender_wait_flag);
+    UDPSender sender(
+        file_path, 
+        send_rate, 
+        io_service_sender, 
+        mq, 
+        sender_wait_flag
+    );
     UDPListener listener(io_service_listener, mq);
 
     BufferMonitor monitor(mq, listener.get_socket(), sender_wait_flag);
@@ -150,7 +158,7 @@ int main(int argc, char** argv)
     std::make_shared<msg_q>(
         boost::interprocess::create_only,
         "pipe_to_tcp",
-        100000,
+        MESSAGE_QUEUE_SIZE,
         sizeof(message_pack)
     );
 
@@ -168,7 +176,7 @@ int main(int argc, char** argv)
 
         TCPScanner scanner;
         scanner.service_loop();
-        exit(0);
+        exit(EXIT_SUCCESS);
     }
     else
     {
@@ -178,7 +186,7 @@ int main(int argc, char** argv)
 
         int status;
         waitpid(process_id, &status, 0);
-        exit(0);
+        exit(EXIT_SUCCESS);
     }
 }
 

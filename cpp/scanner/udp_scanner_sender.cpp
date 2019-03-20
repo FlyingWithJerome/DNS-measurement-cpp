@@ -28,7 +28,7 @@ UDPSender::UDPSender(
 , sender_wait_signal_(
     wait_signal
 )
-, normal_timer(
+, queue_overflow_sleeper(
     io_service
 )
 , bucket_(
@@ -74,8 +74,9 @@ int UDPSender::start_send() noexcept
                 UDPSender::remote_port_num
             );
 
-            while(not bucket_.consume(1))
+            while(not bucket_.consume(1)) // flow control with token bucket
             {
+                asm("pause");
             }
 
             if (sender_wait_signal_)
@@ -83,8 +84,8 @@ int UDPSender::start_send() noexcept
                 boost::thread::id thread_id = boost::this_thread::get_id();
                 std::cout << "[UDP Sender] going to sleep for " << sleep_time << "seconds (id:" << thread_id << ")\n";
 
-                normal_timer.expires_from_now(boost::posix_time::seconds(sleep_time));
-                normal_timer.wait();
+                queue_overflow_sleeper.expires_from_now(boost::posix_time::seconds(sleep_time));
+                queue_overflow_sleeper.wait();
                 std::cout << "[UDP Sender] sender waked up (id:" << thread_id << ")\n";
             }
             
