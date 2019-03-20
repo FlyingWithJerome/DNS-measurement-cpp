@@ -73,16 +73,23 @@ void UDPListener::reactor_read(const boost::system::error_code& error_code)
         
         std::size_t available_packet_size = std::min((int)(main_socket_.available()), 1000);
 
-        std::vector<uint8_t> new_arrival(available_packet_size);
+        try
+        {
+            std::vector<uint8_t> new_arrival(available_packet_size);
 
-        available_packet_size = main_socket_.receive_from(
+            available_packet_size = main_socket_.receive_from(
             boost::asio::buffer(new_arrival),
             sender_info
-        );
+            );
 
-        new_arrival.resize(available_packet_size);
+            new_arrival.resize(available_packet_size);
 
-        handle_receive(new_arrival, sender_info);
+            handle_receive(new_arrival, sender_info);
+        }
+        catch(...)
+        {
+            start_receive();
+        }
     }
 }
 

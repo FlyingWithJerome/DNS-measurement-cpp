@@ -115,20 +115,32 @@ void TCPScanner::perform_tcp_query(
 
     try
     {
+        if ( response_packet.size() < 2 )
+        {
+            // write to malformed packet
+            return;
+        }
         Tins::DNS readable_response(response_packet.data()+2, response_packet.size()-2);
 
-        std::cout << "[TCP Scanner] packet name: " << readable_response.answers()[0].dname() << "\n";
+        if (readable_response.answers_count() > 0)
+        {
+            std::cout << "[TCP Scanner] packet name: " << readable_response.answers()[0].dname() << "\n";
 
-        std::string result;
-        inspect_response(readable_response, query_property, result);
+            std::string result;
+            inspect_response(readable_response, query_property, result);
 
-        TCP_SCANNER_NORMAL_LOG(
-            tcp_normal_log_, 
-            ip_address.c_str(), 
-            query_property, 
-            readable_response.rcode(), 
-            result.c_str()
-        )
+            TCP_SCANNER_NORMAL_LOG(
+                tcp_normal_log_, 
+                ip_address.c_str(), 
+                query_property, 
+                readable_response.rcode(), 
+                result.c_str()
+            )
+        }
+        else
+        {
+            // add a tcp scanner malform log
+        }
 
     }
     catch (...)

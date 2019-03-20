@@ -64,13 +64,12 @@ monitor.o : cpp/scanner/monitor.cpp
 packet_factory.o: cpp/packet/packet_factory.cpp
 	g++ -c cpp/packet/packet_factory.cpp $(CPP_OPT) $(TINS_FLAG)
 
-udp_scanner_main: udp_scanner_sender.o udp_scanner_listener.o udp_scanner.o name_util.o log_service.o token_bucket.o tcp_scanner.o monitor.o packet_factory.o
+udp_scanner_main: udp_scanner_sender.o udp_scanner_listener.o udp_scanner.o name_util.o log_service.o tcp_scanner.o monitor.o packet_factory.o
 	g++ udp_scanner_sender.o \
 	    udp_scanner_listener.o \
 		udp_scanner.o \
 		log_service.o \
 		name_util.o \
-		token_bucket.o \
 		tcp_scanner.o \
 		monitor.o \
 		packet_factory.o \
@@ -80,8 +79,8 @@ udp_scanner_main: udp_scanner_sender.o udp_scanner_listener.o udp_scanner.o name
 tcp_scanner_main: tcp_scanner.o log_service.o name_util.o 
 	g++ tcp_scanner.o log_service.o name_util.o -o tcp_scanner $(ALL_OPT)
 
-token_bucket.o: cpp/scanner/token_bucket.cpp
-	g++ -c cpp/scanner/token_bucket.cpp $(CPP_OPT) $(POSIX_FLAG)
+# token_bucket.o: cpp/scanner/token_bucket.cpp
+# 	g++ -c cpp/scanner/token_bucket.cpp $(CPP_OPT) $(POSIX_FLAG)
 
 scanner: udp_scanner_main
 	mv *.o build

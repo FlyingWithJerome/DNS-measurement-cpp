@@ -18,9 +18,6 @@ UDPSender::UDPSender(
 , socket_(
     io_service
 )
-, bucket_(
-    packet_send_rate
-)
 , message_queue_(
     message_queue
 )
@@ -29,6 +26,12 @@ UDPSender::UDPSender(
 )
 , sender_wait_signal_(
     wait_signal
+)
+, normal_timer(
+    io_service
+)
+, bucket_(
+    40000, 40000
 )
 {
     socket_.open();
@@ -70,28 +73,17 @@ int UDPSender::start_send() noexcept
                 UDPSender::remote_port_num
             );
 
-            std::cout << "[UDP Sender] send to " << inet_ntoa(ip_address) << "\n";
-            bucket_.consume_one_packet();
-
-            // socket_.async_send_to(
-            //     boost::asio::buffer(full_packet),
-            //     end_point,
-            //     boost::bind(
-            //         &UDPSender::handle_send,
-            //         this,
-            //         boost::asio::placeholders::error,
-            //         boost::asio::placeholders::bytes_transferred
-            //     )
-            // );
+            while(not bucket_.consume(1))
+            {
+            }
 
             if (sender_wait_signal_)
             {
                 boost::thread::id thread_id = boost::this_thread::get_id();
                 std::cout << "[UDP Sender] going to sleep for " << sleep_time << "seconds (id:" << thread_id << ")\n";
 
-                boost::asio::deadline_timer timer(socket_.get_io_service());
-                timer.expires_from_now(boost::posix_time::seconds(sleep_time));
-                timer.wait();
+                normal_timer.expires_from_now(boost::posix_time::seconds(sleep_time));
+                normal_timer.wait();
                 std::cout << "[UDP Sender] sender waked up (id:" << thread_id << ")\n";
             }
             
@@ -107,6 +99,7 @@ int UDPSender::start_send() noexcept
         }
         
     }
+    std::cout << "[UDP Scanner] Total Packets Sent: " << num_of_packets_sent << std::endl;
     return 0;
 }
 
