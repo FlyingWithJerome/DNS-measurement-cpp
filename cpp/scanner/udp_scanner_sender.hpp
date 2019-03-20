@@ -89,9 +89,10 @@ class UDPSender
 {
     public:
         UDPSender(
+            const std::string&,
+            const std::uint32_t&,
             boost::asio::io_service&,
             std::shared_ptr<boost::interprocess::message_queue>&,
-            const std::string&,
             std::atomic<bool>&
         );
 

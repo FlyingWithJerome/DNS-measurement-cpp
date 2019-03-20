@@ -26,7 +26,7 @@ typedef boost::interprocess::message_queue msg_q;
 void keyboard_interruption_handler_child(int);
 void keyboard_interruption_handler_parent(int);
 
-int launch_udp_scanners(const std::string&, std::shared_ptr<msg_q>&);
+int launch_udp_scanners(const std::string&, std::shared_ptr<msg_q>&, std::uint32_t&);
 
 void keyboard_interruption_handler_child(int signal)
 {
@@ -75,7 +75,8 @@ sigaction(SIGINT, &interruption_handler, nullptr);
 
 int launch_udp_scanners(
     const std::string&      file_path,
-    std::shared_ptr<msg_q>& mq
+    std::shared_ptr<msg_q>& mq,
+    std::uint32_t& send_rate
 )
 {
     boost::asio::io_service io_service_listener;
@@ -86,14 +87,14 @@ int launch_udp_scanners(
 
     std::cout << "[Scanner General] Number of threads (listener+sender): " <<  number_of_threads << "\n";
 
-    std::atomic<bool> sender_wait{false};
+    std::atomic<bool> sender_wait_flag{false};
 
     boost::thread_group thread_pool_;
 
-    UDPSender   sender(io_service_sender,     mq, file_path, sender_wait);
+    UDPSender   sender(file_path, send_rate, io_service_sender, mq, sender_wait_flag);
     UDPListener listener(io_service_listener, mq);
 
-    BufferMonitor monitor(mq, listener.get_socket(), sender_wait);
+    BufferMonitor monitor(mq, listener.get_socket(), sender_wait_flag);
 
     thread_pool_.create_thread(
         [&monitor](){ monitor.start_monitor(); }
@@ -135,10 +136,10 @@ int main(int argc, char** argv)
         return -1;
     }
 
-    std::uint8_t send_rate = 
+    std::uint32_t send_rate = 
     variables_map_.count("send_rate") > 0          ? 
     variables_map_["send_rate"].as<std::uint32_t>() : 
-    0;
+    40000;
 
     std::string file_path = variables_map_["file_path"].as<std::string>();
     /* ----------- Parse User Inputs END ----------- */
@@ -173,7 +174,7 @@ int main(int argc, char** argv)
     {
         REGISTER_INTERRUPTION(parent)
 
-        launch_udp_scanners(file_path, message_queue);
+        launch_udp_scanners(file_path, message_queue, send_rate);
 
         int status;
         waitpid(process_id, &status, 0);

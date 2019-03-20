@@ -7,9 +7,10 @@ constexpr uint64_t UDPSender::sleep_per_iter;
 constexpr uint16_t UDPSender::sleep_time;
 
 UDPSender::UDPSender(
+    const std::string& input_file,
+    const std::uint32_t& send_rate,
     boost::asio::io_service& io_service,
     std::shared_ptr<boost::interprocess::message_queue>& message_queue,
-    const std::string& input_file,
     std::atomic<bool>& wait_signal
 )
 : file_input_(
@@ -31,7 +32,7 @@ UDPSender::UDPSender(
     io_service
 )
 , bucket_(
-    40000, 40000
+    send_rate, send_rate
 )
 {
     socket_.open();
