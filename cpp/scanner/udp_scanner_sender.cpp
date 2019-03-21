@@ -35,6 +35,9 @@ UDPSender::UDPSender(
     send_rate, send_rate
 )
 {
+    flow_control_sleep_.tv_nsec = NANOSECONDS / send_rate;
+    flow_control_sleep_.tv_sec  = 0;
+
     socket_.open();
     socket_.non_blocking(true);
 
@@ -77,7 +80,7 @@ int UDPSender::start_send() noexcept
 
             while(not bucket_.consume(1)) // flow control with token bucket
             {
-                std::this_thread::yield();
+                nanosleep(&flow_control_sleep_, &flow_control_sleep_idle_);
             }
 
             if (sender_wait_signal_)

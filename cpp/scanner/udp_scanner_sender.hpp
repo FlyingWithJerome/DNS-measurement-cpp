@@ -10,6 +10,7 @@
 #include <fstream>
 #include <vector>
 
+#include <time.h>
 #include <stdlib.h>
 
 #include <boost/asio.hpp>
@@ -23,6 +24,8 @@
 
 #include "token_bucket.hpp"
 #include "../packet/packet_factory.hpp"
+
+#define NANOSECONDS 1000000000L
 
 class raw
 {
@@ -73,8 +76,8 @@ class raw
         }
 
         explicit raw(int protocol_id, int protocol_family)
-            : protocol_(protocol_id)
-            , family_(protocol_family)
+        : protocol_(protocol_id)
+        , family_(protocol_family)
         {
         }
     private:
@@ -118,6 +121,8 @@ class UDPSender
         TokenBucket bucket_;
         boost::asio::deadline_timer queue_overflow_sleeper;
 
+        struct timespec flow_control_sleep_;
+        struct timespec flow_control_sleep_idle_;
 };
 
 #endif

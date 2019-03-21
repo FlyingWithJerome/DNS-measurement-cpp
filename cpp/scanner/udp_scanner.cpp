@@ -22,6 +22,7 @@
 #include "monitor.hpp"
 
 #define MESSAGE_QUEUE_SIZE 100000
+#define DEFAULT_SYS_BUFFER_SIZE 17000000
 
 typedef boost::interprocess::message_queue msg_q;
 
@@ -29,6 +30,19 @@ void keyboard_interruption_handler_child(int);
 void keyboard_interruption_handler_parent(int);
 
 int launch_udp_scanners(const std::string&, std::shared_ptr<msg_q>&, std::uint32_t&);
+
+int modify_sysctl_rmem(const uint32_t&);
+
+int modify_sysctl_rmem(const uint32_t& rmem_size)
+{
+    std::ofstream rmem_config("/proc/sys/net/core/rmem_max");
+    if (rmem_config.is_open())
+    {
+        rmem_config << std::to_string(rmem_size) << "\n";
+        return 0;
+    }
+    return -1;
+}
 
 void keyboard_interruption_handler_child(int signal)
 {
@@ -130,6 +144,7 @@ int main(int argc, char** argv)
         ("help", "Help message")
         ("file_path", boost::program_options::value<std::string>(), "input path of the file")
         ("send_rate", boost::program_options::value<uint32_t>(),    "packet send rate")
+        ("sys_rmem", boost::program_options::value<uint32_t>(), "system level socket buffer size")
     ;
 
     boost::program_options::variables_map variables_map_;
@@ -144,6 +159,11 @@ int main(int argc, char** argv)
         return -1;
     }
 
+    std::uint32_t sys_sock_buf_size = 
+    variables_map_.count("sys_rmem") > 0          ? 
+    variables_map_["sys_rmem"].as<std::uint32_t>(): 
+    DEFAULT_SYS_BUFFER_SIZE;
+
     std::uint32_t send_rate = 
     variables_map_.count("send_rate") > 0          ? 
     variables_map_["send_rate"].as<std::uint32_t>() : 
@@ -151,6 +171,8 @@ int main(int argc, char** argv)
 
     std::string file_path = variables_map_["file_path"].as<std::string>();
     /* ----------- Parse User Inputs END ----------- */
+
+    modify_sysctl_rmem(sys_sock_buf_size);
 
     boost::interprocess::message_queue::remove("pipe_to_tcp");
 
