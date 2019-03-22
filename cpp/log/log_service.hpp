@@ -114,4 +114,11 @@ BOOST_LOG(lg) \
 << (int)qp.normal_query_over_tcp << "," \
 << msg;}
 
+#define TCP_SCANNER_MALFORMED_LOG(fn, addr, qp, msg) {logger_type lg(boost::log::keywords::channel=fn); \
+BOOST_LOG(lg) \
+<< qp.question_id                << "," \
+<< addr                          << "," \
+<< (int)qp.normal_query_over_tcp << "," \
+<< msg;}
+
 #endif

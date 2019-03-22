@@ -1,13 +1,21 @@
 #include "tcp_scanner.hpp"
 
 constexpr char   TCPScanner::tcp_normal_log_[];
+constexpr char   TCPScanner::tcp_malformed_log_[];
 constexpr size_t TCPScanner::largest_tcp_response_size;
 
-TCPScanner::TCPScanner()
-: work(
+TCPScanner::TCPScanner(const std::string& type_of_query)
+: type_of_query_(
+    string_to_query_type(type_of_query)
+)
+, work(
     new boost::asio::io_service::work(io_service_)
 )
 {
+    init_new_log_file(tcp_normal_log_);
+
+    init_new_log_file(tcp_malformed_log_);
+
     try
     {
         pipe_to_tcp_.reset(
@@ -30,8 +38,6 @@ TCPScanner::TCPScanner()
     {
         std::cerr << "[TCP Scanner] " << e.what() << std::endl;
     }
-
-    init_new_log_file(tcp_normal_log_);
 }
 
 int TCPScanner::service_loop() noexcept
@@ -93,6 +99,7 @@ void TCPScanner::perform_tcp_query(
 
     packet_configuration packet_config;
     packet_config.id     = 1338;
+    packet_config.query_type = type_of_query_;
     packet_config.q_name = question;
 
     packet_factory_.make_packet(
@@ -103,13 +110,13 @@ void TCPScanner::perform_tcp_query(
 
     if (client.send(full_packet) <= 0)
     {
-        TCP_SCANNER_NORMAL_LOG(tcp_normal_log_, ip_address.c_str(), query_property, -1, "fail_to_send")
+        TCP_SCANNER_MALFORMED_LOG(tcp_malformed_log_, ip_address.c_str(), query_property, "fail_to_send")
         return;
     }
     
     if (client.receive(response_packet) <= 0)
     {
-        TCP_SCANNER_NORMAL_LOG(tcp_normal_log_, ip_address.c_str(), query_property, -1, "recv_timeout")
+        TCP_SCANNER_MALFORMED_LOG(tcp_malformed_log_, ip_address.c_str(), query_property, "recv_timeout")
         return;
     }
 
@@ -118,6 +125,7 @@ void TCPScanner::perform_tcp_query(
         if ( response_packet.size() < 2 )
         {
             // write to malformed packet
+            TCP_SCANNER_MALFORMED_LOG(tcp_malformed_log_, ip_address.c_str(), query_property, "receive_less_than_2_bytes")
             return;
         }
         Tins::DNS readable_response(response_packet.data()+2, response_packet.size()-2);
@@ -139,20 +147,13 @@ void TCPScanner::perform_tcp_query(
         }
         else
         {
-            // add a tcp scanner malform log
+            TCP_SCANNER_MALFORMED_LOG(tcp_malformed_log_, ip_address.c_str(), query_property, "zero_answer_count")
         }
 
     }
     catch (...)
     {
-        std::cout << "[TCP Scanner] " << ip_address << " had malformed packet\n";
-        // TCP_SCANNER_NORMAL_LOG(
-        //     tcp_normal_log_, 
-        //     ip_address.c_str(), 
-        //     question_id, 
-        //     readable_response.rcode(), 
-        //     "malformed_tcp_response"
-        // )
+        TCP_SCANNER_MALFORMED_LOG(tcp_malformed_log_, ip_address.c_str(), query_property, "un-parsable_packet")
     }
 }
 
@@ -175,9 +176,9 @@ void TCPScanner::inspect_response(
         return;
     }
 
-    if (response.answers_count() != 100 and not query_property.normal_query_over_tcp)
+    if (response.answers_count() != 50 and not query_property.normal_query_over_tcp)
     {
-        // the number of answers is not 100, write down the actual answer count
+        // the number of answers is not 50, write down the actual answer count
         std::stringstream result_builder;
         result_builder 
         << "wrong_number_of_entries("

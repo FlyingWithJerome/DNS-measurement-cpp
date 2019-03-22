@@ -29,7 +29,13 @@ typedef boost::interprocess::message_queue msg_q;
 void keyboard_interruption_handler_child(int);
 void keyboard_interruption_handler_parent(int);
 
-int launch_udp_scanners(const std::string&, std::shared_ptr<msg_q>&, std::uint32_t&);
+int launch_udp_scanners(
+    const std::string&,
+    const std::string&, 
+    const std::uint32_t&, 
+    const float&, 
+    std::shared_ptr<msg_q>&
+);
 
 int modify_sysctl_rmem(const uint32_t&);
 
@@ -90,9 +96,11 @@ sigaction(SIGINT, &interruption_handler, nullptr);
 
 
 int launch_udp_scanners(
-    const std::string&      file_path,
-    std::shared_ptr<msg_q>& mq,
-    std::uint32_t& send_rate
+    const std::string&     file_path,
+    const std::string&     type_of_query,
+    const std::uint32_t&   send_rate,
+    const float& percent_of_scanning_addr,
+    std::shared_ptr<msg_q>& mq
 )
 {
     boost::asio::io_service io_service_listener;
@@ -109,7 +117,9 @@ int launch_udp_scanners(
 
     UDPSender sender(
         file_path, 
+        type_of_query,
         send_rate, 
+        percent_of_scanning_addr,
         io_service_sender, 
         mq, 
         sender_wait_flag
@@ -144,6 +154,8 @@ int main(int argc, char** argv)
         ("help", "Help message")
         ("file_path", boost::program_options::value<std::string>(), "input path of the file")
         ("send_rate", boost::program_options::value<uint32_t>(),    "packet send rate")
+        ("perc_of_addr", boost::program_options::value<float>(), "percent of scanning addresses")
+        ("type_of_query", boost::program_options::value<std::string>(), "type of DNS record used for query")
         ("sys_rmem", boost::program_options::value<uint32_t>(), "system level socket buffer size")
     ;
 
@@ -168,6 +180,16 @@ int main(int argc, char** argv)
     variables_map_.count("send_rate") > 0          ? 
     variables_map_["send_rate"].as<std::uint32_t>() : 
     40000;
+
+    float perc_of_addr = 
+    variables_map_.count("perc_of_addr") > 0   ? 
+    variables_map_["perc_of_addr"].as<float>() : 
+    1.0;
+
+    std::string type_of_query = 
+    variables_map_.count("type_of_query") > 0         ? 
+    variables_map_["type_of_query"].as<std::string>() : 
+    std::string("A");
 
     std::string file_path = variables_map_["file_path"].as<std::string>();
     /* ----------- Parse User Inputs END ----------- */
@@ -196,7 +218,7 @@ int main(int argc, char** argv)
     {
         REGISTER_INTERRUPTION(child)
 
-        TCPScanner scanner;
+        TCPScanner scanner(type_of_query);
         scanner.service_loop();
         exit(EXIT_SUCCESS);
     }
@@ -204,7 +226,7 @@ int main(int argc, char** argv)
     {
         REGISTER_INTERRUPTION(parent)
 
-        launch_udp_scanners(file_path, message_queue, send_rate);
+        launch_udp_scanners(file_path, type_of_query, send_rate, perc_of_addr, message_queue);
 
         int status;
         waitpid(process_id, &status, 0);

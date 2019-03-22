@@ -129,7 +129,7 @@ void UDPListener::handle_receive(
         
         if(query_property.jumbo_type == NameUtilities::JumboType::no_jumbo) // not a jumbo query, will start a jumbo query
         {
-            std::cout << "[UDP Listener] answer: " << incoming_response.answers()[0].data() << std::endl;
+            std::cout << "[UDP Listener] Name: " << question_name << std::endl;
 
             // if (incoming_response.answers()[0].data() != "192.168.0.0")
             // {
@@ -146,17 +146,19 @@ void UDPListener::handle_receive(
             //     goto End;
             // }
 
+            
             std::vector<uint8_t> full_packet_jumbo;
             std::vector<uint8_t> full_packet_ac1an0;
-
+            const QueryType type_of_query_ = incoming_response.queries()[0].query_type();
+            
             const std::string question_name_jumbo = std::string("jumbo1-") + query_property.name;
 
             const std::string question_name_ac1an0 = std::string("ac1an0-") + question_name_jumbo;
 
             const std::string question_for_tcp = std::string("t-") + query_property.name;
 
-            SEND_OUT_PACKET(jumbo,  full_packet_jumbo,  question_name_jumbo,  sender)
-            SEND_OUT_PACKET(ac1an0, full_packet_ac1an0, question_name_ac1an0, sender)
+            SEND_OUT_PACKET(jumbo,  full_packet_jumbo,  question_name_jumbo,  type_of_query_, sender)
+            SEND_OUT_PACKET(ac1an0, full_packet_ac1an0, question_name_ac1an0, type_of_query_, sender)
 
             SEND_TO_TCP_SCANNER(question_for_tcp)
             UDP_SCANNER_NORMAL_LOG(udp_normal_log_, sender, query_property.question_id, "ok")

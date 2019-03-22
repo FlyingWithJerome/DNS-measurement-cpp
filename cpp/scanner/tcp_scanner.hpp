@@ -32,7 +32,7 @@
 class TCPScanner
 {
     public:
-        TCPScanner();
+        TCPScanner(const std::string&);
         TCPScanner(const TCPScanner&) = delete;
         ~TCPScanner();
         int service_loop() noexcept;
@@ -47,8 +47,11 @@ class TCPScanner
 
         static constexpr size_t largest_tcp_response_size = 4500;
         static constexpr char tcp_normal_log_[] = "tcp_scanner_normal.log";
+        static constexpr char tcp_malformed_log_[] = "tcp_scanner_malformed_packet.log";
 
     private:
+        const QueryType type_of_query_;
+
         std::vector<std::thread> thread_nest_;
         std::shared_ptr<boost::interprocess::message_queue> pipe_to_tcp_;
 

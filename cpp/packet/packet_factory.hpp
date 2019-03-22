@@ -43,6 +43,8 @@ typedef struct{
     
 } packet_configuration;
 
+QueryType string_to_query_type(const std::string&) noexcept;
+
 class QueryFactory
 {
     public:

@@ -5,6 +5,23 @@ constexpr size_t QueryFactory::tcp_dns_size_shift;
 
 constexpr char   ResponseFactory::short_msg[];
 
+QueryType string_to_query_type(const std::string& str) noexcept
+{
+    if (str == "A")
+        return QueryType::A;
+
+    else if (str == "MX")
+        return QueryType::MX;
+
+    else if (str == "NS")
+        return QueryType::NS;
+
+    else if (str == "TXT")
+        return QueryType::TXT;
+
+    return QueryType::A;
+}
+
 void QueryFactory::make_packet(
     const PacketTypes& packet_type,
     const packet_configuration& packet_config,

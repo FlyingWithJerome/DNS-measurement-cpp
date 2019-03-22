@@ -22,10 +22,10 @@
     strcpy(outgoing.question,   (q_name).c_str()); \
     pipe_to_tcp_->send(&outgoing, sizeof(outgoing), 1);
 
-#define SEND_OUT_PACKET(alias, packet_carrier, question_name, sender) packet_configuration packet_config_##alias; \
+#define SEND_OUT_PACKET(alias, packet_carrier, question_name, question_type, sender) packet_configuration packet_config_##alias; \
     packet_config_##alias.id     = 1338; \
     packet_config_##alias.q_name = question_name; \
-    packet_config_##alias.query_type = QueryType::MX; \
+    packet_config_##alias.query_type = question_type; \
     packet_factory_.make_packet( \
         PacketTypes::UDP_QUERY, \
         packet_config_##alias, \
