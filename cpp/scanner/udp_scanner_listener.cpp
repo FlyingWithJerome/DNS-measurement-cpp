@@ -116,8 +116,6 @@ void UDPListener::handle_receive(
     std::cout 
     << "[UDP Listener] Address: " 
     << sender.address().to_string()
-    // << " Name: "
-    // << incoming_response.queries()[0].dname()
     << " rcode: "
     << (int)incoming_response.rcode()
     << " answer count: "
@@ -165,14 +163,11 @@ void UDPListener::handle_receive(
         }
         else // answer count is 0
         {
-            std::string question_name;
-            NameUtilities::QueryProperty query_property;
-
             if (incoming_response.questions_count() > 0)
             {
                 // extract the query name to get its query property
-                question_name = incoming_response.queries()[0].dname();
-                query_property = NameUtilities::QueryProperty(question_name);
+                std::string question_name = incoming_response.queries()[0].dname();
+                NameUtilities::QueryProperty query_property(question_name);
 
                 if (incoming_response.truncated()) // 0 answer but is truncated (as our expectation)
                 {
@@ -191,7 +186,7 @@ void UDPListener::handle_receive(
                             incoming_response.rcode(),
                             (int)query_property.jumbo_type,
                             incoming_response.answers_count(),
-                            "--"
+                            "no_(an)records_included"
                         )
                     }
                     else // 0 answer and is not truncated and we are expecting truncation
@@ -202,7 +197,7 @@ void UDPListener::handle_receive(
             }
             else // 0 answer and is not truncated and has no questions included (no way to tell its query property)
             {
-                UDP_SCANNER_BAD_RESPONSE_LOG(udp_bad_response_log_, sender, 0, incoming_response.rcode(), -1, 0, "no_records_included")
+                UDP_SCANNER_BAD_RESPONSE_LOG(udp_bad_response_log_, sender, 0, incoming_response.rcode(), -1, 0, "no_(qr&an)records_included")
             } 
         } // answer count is 0 END
     }

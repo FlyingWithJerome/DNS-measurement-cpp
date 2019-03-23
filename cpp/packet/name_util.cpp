@@ -33,9 +33,6 @@ uint32_t NameUtilities::get_question_id(const std::string& question)
 
 NameUtilities::JumboType NameUtilities::get_jumbo_type(const std::string& question) noexcept
 {
-    // if (signal_word.compare(question.substr(0, signal_word.size())) != 0)
-    //     return NameUtilities::JumboType(no_jumbo);
-
     const char key_character = question[signal_word.size()];
 
     switch(key_character)

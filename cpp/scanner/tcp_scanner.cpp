@@ -120,40 +120,42 @@ void TCPScanner::perform_tcp_query(
         return;
     }
 
+    if ( response_packet.size() < 2 )
+    {
+        // write to malformed packet
+        TCP_SCANNER_MALFORMED_LOG(tcp_malformed_log_, ip_address.c_str(), query_property, "receive_less_than_2_bytes")
+        return;
+    }
+
+    Tins::DNS readable_response;
+
     try
     {
-        if ( response_packet.size() < 2 )
-        {
-            // write to malformed packet
-            TCP_SCANNER_MALFORMED_LOG(tcp_malformed_log_, ip_address.c_str(), query_property, "receive_less_than_2_bytes")
-            return;
-        }
-        Tins::DNS readable_response(response_packet.data()+2, response_packet.size()-2);
-
-        if (readable_response.answers_count() > 0)
-        {
-            std::cout << "[TCP Scanner] packet name: " << readable_response.answers()[0].dname() << "\n";
-
-            std::string result;
-            inspect_response(readable_response, query_property, result);
-
-            TCP_SCANNER_NORMAL_LOG(
-                tcp_normal_log_, 
-                ip_address.c_str(), 
-                query_property, 
-                readable_response.rcode(), 
-                result.c_str()
-            )
-        }
-        else
-        {
-            TCP_SCANNER_MALFORMED_LOG(tcp_malformed_log_, ip_address.c_str(), query_property, "zero_answer_count")
-        }
-
+        readable_response = Tins::DNS(response_packet.data()+2, response_packet.size()-2);
     }
     catch (...)
     {
         TCP_SCANNER_MALFORMED_LOG(tcp_malformed_log_, ip_address.c_str(), query_property, "un-parsable_packet")
+        return;
+    }
+    if (readable_response.answers_count() > 0)
+    {
+        std::cout << "[TCP Scanner] packet name: " << readable_response.answers()[0].dname() << "\n";
+
+        std::string result;
+        inspect_response(readable_response, query_property, result);
+
+        TCP_SCANNER_NORMAL_LOG(
+            tcp_normal_log_, 
+            ip_address, 
+            query_property, 
+            readable_response.rcode(), 
+            result
+        )
+    }
+    else
+    {
+        TCP_SCANNER_MALFORMED_LOG(tcp_malformed_log_, ip_address.c_str(), query_property, "zero_answer_count")
     }
 }
 
@@ -175,10 +177,35 @@ void TCPScanner::inspect_response(
         result_str = result_builder.str();
         return;
     }
+    const QueryType query_type = static_cast<QueryType>(response.answers()[0].query_type());
 
-    if (response.answers_count() != 50 and not query_property.normal_query_over_tcp)
+    if(response.answers_count() == 1 and query_type == Tins::DNS::QueryType::TXT)
     {
-        // the number of answers is not 50, write down the actual answer count
+        result_str = "answer_ok";
+        return;
+    }
+    else if(response.answers_count() == 50 and query_type == Tins::DNS::QueryType::A)
+    {
+        result_str = "answer_ok";
+        return;
+    }
+    else if(response.answers_count() == 26 and query_type == Tins::DNS::QueryType::MX)
+    {
+        result_str = "answer_ok";
+        return;
+    }
+    else if(response.answers_count() == 26 and query_type == Tins::DNS::QueryType::NS)
+    {
+        result_str = "answer_ok";
+        return;
+    }
+    else if(query_property.normal_query_over_tcp)
+    {
+        result_str = "answer_ok";
+        return;
+    }
+    else
+    {
         std::stringstream result_builder;
         result_builder 
         << "wrong_number_of_entries("
@@ -188,7 +215,6 @@ void TCPScanner::inspect_response(
         result_str = result_builder.str();
         return;
     }
-    result_str = "answer_ok";
 }
 
 TCPScanner::~TCPScanner()
