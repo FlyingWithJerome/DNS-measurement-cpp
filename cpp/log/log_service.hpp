@@ -78,10 +78,11 @@ BOOST_LOG(lg) \
 << ep.address().to_string() << "," \
 << rcode;}
 
-#define UDP_SCANNER_TRUNCATE_LOG(fn, ep, qid, tc) {logger_type lg(boost::log::keywords::channel=fn); \
+#define UDP_SCANNER_TRUNCATE_LOG(fn, ep, qid, ans_num, tc) {logger_type lg(boost::log::keywords::channel=fn); \
 BOOST_LOG(lg) \
 << qid                      << "," \
 << ep.address().to_string() << "," \
+<< ans_num                  << "," \
 << tc;}
 
 #define UDP_SCANNER_BAD_RESPONSE_LOG(fn, ep, qid, rcode, jumbo, ancount, msg) {logger_type lg(boost::log::keywords::channel=fn); \

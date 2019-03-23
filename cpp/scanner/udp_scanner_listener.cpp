@@ -99,6 +99,7 @@ void UDPListener::handle_receive(
 )
 {
     Tins::DNS incoming_response;
+    int number_of_answers;
 
     try
     {
@@ -110,6 +111,8 @@ void UDPListener::handle_receive(
         goto End;
     }
 
+    number_of_answers = incoming_response.answers_count();
+
     std::cout 
     << "[UDP Listener] Address: " 
     << sender.address().to_string()
@@ -118,101 +121,95 @@ void UDPListener::handle_receive(
     << " rcode: "
     << (int)incoming_response.rcode()
     << " answer count: "
-    << incoming_response.answers_count()
-    << "\n";
+    << number_of_answers
+    << "\n";    
 
-    if (incoming_response.rcode() == 0 and incoming_response.answers_count() > 0)
+    if (incoming_response.rcode() == 0)
     { // is a legal response
-        std::string question_name = incoming_response.answers()[0].dname();
 
-        NameUtilities::QueryProperty query_property(question_name);
-        
-        if(query_property.jumbo_type == NameUtilities::JumboType::no_jumbo) // not a jumbo query, will start a jumbo query
+        if (number_of_answers > 0)
         {
-            std::cout << "[UDP Listener] Name: " << question_name << std::endl;
+            std::string question_name = incoming_response.answers()[0].dname();
 
-            // if (incoming_response.answers()[0].data() != "192.168.0.0")
-            // {
-            //     // write down the answer error
-            //     UDP_SCANNER_BAD_RESPONSE_LOG(
-            //         udp_bad_response_log_,
-            //         sender,
-            //         query_property.question_id,
-            //         0,
-            //         (int)query_property.jumbo_type,
-            //         incoming_response.answers_count(),
-            //         "answer error"
-            //     )
-            //     goto End;
-            // }
-
+            NameUtilities::QueryProperty query_property(question_name);
             
-            std::vector<uint8_t> full_packet_jumbo;
-            std::vector<uint8_t> full_packet_ac1an0;
-            const QueryType type_of_query_ = incoming_response.queries()[0].query_type();
-            
-            const std::string question_name_jumbo = std::string("jumbo1-") + query_property.name;
+            if(query_property.jumbo_type == NameUtilities::JumboType::no_jumbo) // not a jumbo query, will start a jumbo query
+            {
+                std::cout << "[UDP Listener] Name: " << question_name << std::endl;
+                
+                std::vector<uint8_t> full_packet_jumbo;
+                std::vector<uint8_t> full_packet_ac1an0;
+                const QueryType type_of_query_ = incoming_response.queries()[0].query_type();
+                
+                const std::string question_name_jumbo  = std::string("jumbo1-") + query_property.name;
+                const std::string question_name_ac1an0 = std::string("ac1an0-") + question_name_jumbo;
+                const std::string question_for_tcp     = std::string("t-") + query_property.name;
 
-            const std::string question_name_ac1an0 = std::string("ac1an0-") + question_name_jumbo;
+                SEND_OUT_PACKET(jumbo,  full_packet_jumbo,  question_name_jumbo,  type_of_query_, sender)
+                SEND_OUT_PACKET(ac1an0, full_packet_ac1an0, question_name_ac1an0, type_of_query_, sender)
 
-            const std::string question_for_tcp = std::string("t-") + query_property.name;
+                SEND_TO_TCP_SCANNER(question_for_tcp)
+                UDP_SCANNER_NORMAL_LOG(udp_normal_log_, sender, query_property.question_id, "ok")
 
-            SEND_OUT_PACKET(jumbo,  full_packet_jumbo,  question_name_jumbo,  type_of_query_, sender)
-            SEND_OUT_PACKET(ac1an0, full_packet_ac1an0, question_name_ac1an0, type_of_query_, sender)
-
-            SEND_TO_TCP_SCANNER(question_for_tcp)
-            UDP_SCANNER_NORMAL_LOG(udp_normal_log_, sender, query_property.question_id, "ok")
-
-        } // not a jumbo query, will start a jumbo query END
-        else
-        {
-            if (incoming_response.truncated()) // is a jumbo query and is truncated (as our expectation)
+            }// not a jumbo query, will start a jumbo query END
+            else if (incoming_response.truncated()) // is a jumbo query and is truncated (as our expectation)
             {
                 // send to tcp scanner
                 SEND_TO_TCP_SCANNER(question_name)
-                UDP_SCANNER_TRUNCATE_LOG(udp_truncate_log_, sender, query_property.question_id, "tc_ok")
+                UDP_SCANNER_TRUNCATE_LOG(udp_truncate_log_, sender, query_property.question_id, number_of_answers, "tc_ok")
             }
-            else // is a jumbo query but is not truncated
+            else // is a jumbo query and is not truncated but has a some answers
             {
-                UDP_SCANNER_TRUNCATE_LOG(udp_truncate_log_, sender, query_property.question_id, "tc_fail")
+                UDP_SCANNER_TRUNCATE_LOG(udp_truncate_log_, sender, query_property.question_id, number_of_answers, "tc_fail")
             }
         }
-    }
-    else // is not even a legal udp packet
-    {
-        std::string question_name;
-        if (incoming_response.answers_count() > 0)
-            question_name = incoming_response.answers()[0].dname();
-
-        else if (incoming_response.questions_count() > 0)
-            question_name = incoming_response.queries()[0].dname();
-
-        else
+        else // answer count is 0
         {
-            UDP_SCANNER_BAD_RESPONSE_LOG(
-                udp_bad_response_log_, 
-                sender, 
-                0, 
-                incoming_response.rcode(),
-                -1,
-                incoming_response.answers_count(),
-                "no_records_included"
-            )
-            goto End;
-        }
+            std::string question_name;
+            NameUtilities::QueryProperty query_property;
 
-        NameUtilities::QueryProperty query_property(question_name);
+            if (incoming_response.questions_count() > 0)
+            {
+                // extract the query name to get its query property
+                question_name = incoming_response.queries()[0].dname();
+                query_property = NameUtilities::QueryProperty(question_name);
 
-        UDP_SCANNER_BAD_RESPONSE_LOG(
-            udp_bad_response_log_, 
-            sender, 
-            query_property.question_id, 
-            incoming_response.rcode(),
-            (int)query_property.jumbo_type,
-            incoming_response.answers_count(),
-            "--"
-        )
-    } // is not even a legal udp packet END----
+                if (incoming_response.truncated()) // 0 answer but is truncated (as our expectation)
+                {
+                    // send to tcp scanner
+                    SEND_TO_TCP_SCANNER(question_name)
+                    UDP_SCANNER_TRUNCATE_LOG(udp_truncate_log_, sender, query_property.question_id, 0, "tc_ok")
+                }
+                else // 0 answer and is not truncated
+                {
+                    if (query_property.jumbo_type == NameUtilities::JumboType::no_jumbo) // 0 answer and is not truncated and does not need to be truncated
+                    { // 0 answer and is not truncated and we are NOT expecting truncation
+                        UDP_SCANNER_BAD_RESPONSE_LOG(
+                            udp_bad_response_log_, 
+                            sender, 
+                            query_property.question_id, 
+                            incoming_response.rcode(),
+                            (int)query_property.jumbo_type,
+                            incoming_response.answers_count(),
+                            "--"
+                        )
+                    }
+                    else // 0 answer and is not truncated and we are expecting truncation
+                    {
+                        UDP_SCANNER_TRUNCATE_LOG(udp_truncate_log_, sender, query_property.question_id, 0, "tc_fail")
+                    }   
+                }
+            }
+            else // 0 answer and is not truncated and has no questions included (no way to tell its query property)
+            {
+                UDP_SCANNER_BAD_RESPONSE_LOG(udp_bad_response_log_, sender, 0, incoming_response.rcode(), -1, 0, "no_records_included")
+            } 
+        } // answer count is 0 END
+    }
+    else // rcode is not NOERROR
+    {
+        UDP_SCANNER_BAD_RESPONSE_LOG(udp_bad_response_log_, sender, 0, incoming_response.rcode(), -1, 0, "non_zero_rcode")
+    }
 
     End:
     start_receive();
