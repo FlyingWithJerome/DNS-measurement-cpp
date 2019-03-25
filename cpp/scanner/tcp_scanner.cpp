@@ -85,7 +85,7 @@ void TCPScanner::perform_tcp_query(
 
     if (not client.connect())
     {
-        TCP_SCANNER_NORMAL_LOG(ip_address.c_str(), query_property, -1, "connect_timeout")
+        TCP_SCANNER_MALFORMED_LOG(ip_address.c_str(), query_property, "connect_timeout")
         return;
     }
     

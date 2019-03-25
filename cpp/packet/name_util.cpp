@@ -106,7 +106,8 @@ NameUtilities::QueryProperty::QueryProperty(const std::string& raw_name)
                 break;
             
             case 'a':
-                get_answer_config(section, expect_answer_count, expect_number_of_answers);
+                if (section[1] == 'c')
+                    get_answer_config(section, expect_answer_count, expect_number_of_answers);
                 break;
 
             case '0':

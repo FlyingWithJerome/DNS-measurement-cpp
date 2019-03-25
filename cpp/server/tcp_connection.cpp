@@ -45,9 +45,15 @@ void TCPConnection::handle_reactor_receive(
     std::size_t read_size
 )
 {
+    boost::asio::ip::tcp::endpoint remote_endpoint = main_socket_.remote_endpoint();
     if (error)
     {
         std::cout << error.message() << std::endl;
+        return;
+    }
+    else if (read_size <= 2)
+    {
+        TCP_SERVER_MALFORM_LOG(remote_endpoint)        
         return;
     }
 
@@ -59,8 +65,7 @@ void TCPConnection::handle_reactor_receive(
     }
     catch(...)
     {
-        std::cout << "[TCP Server] " << main_socket_.remote_endpoint().address().to_string() << " had sent a malformed packet of size " << read_size-2 << std::endl;
-        // MALFORM_PACKET_UDP_LOG(udp_malform_log_name, sender)
+        TCP_SERVER_MALFORM_LOG(remote_endpoint)  
         return;
     }
 
@@ -76,9 +81,7 @@ void TCPConnection::handle_reactor_receive(
     );
 
     main_socket_.async_send(
-        boost::asio::buffer(
-            raw_data
-        ), 
+        boost::asio::buffer(raw_data), 
         boost::bind(
             &TCPConnection::handle_send, 
             shared_from_this(), 

@@ -33,7 +33,8 @@ int init_log_service(const int& initialize_mode)
             UDP_SERVER_SENDER_OVER_TCP_LOG_NAME,
             UDP_SERVER_MALFORM_PACKET_LOG_NAME,
             UDP_SERVER_EDNS_LOG_NAME,
-            TCP_SERVER_NORMAL_LOG_NAME
+            TCP_SERVER_NORMAL_LOG_NAME,
+            TCP_SERVER_MALFORM_PACKET_LOG_NAME
         };
     }
 

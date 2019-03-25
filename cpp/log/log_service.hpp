@@ -24,7 +24,7 @@
 #define NAMETRICK_EXTERNAL_INCLUDE_ 1
 #include "../packet/name_util.hpp"
 
-#define TIMESTAMP std::chrono::duration_cast< std::chrono::milliseconds >(std::chrono::system_clock::now().time_since_epoch()).count();
+#define TIMESTAMP std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 
 #define INITIALIZE_ON_SCANNER 1
 #define INITIALIZE_ON_SERVER  0
@@ -42,6 +42,7 @@
 #define UDP_SERVER_MALFORM_PACKET_LOG_NAME   "udp_server_malform_record.log"
 #define UDP_SERVER_EDNS_LOG_NAME             "udp_server_edns_record.log"
 #define TCP_SERVER_NORMAL_LOG_NAME           "tcp_server_normal_response.log"
+#define TCP_SERVER_MALFORM_PACKET_LOG_NAME   "tcp_server_malform_record.log"
 
 enum severity_level 
 {
@@ -65,21 +66,27 @@ typedef boost::log::sources::channel_logger_mt<std::string> logger_type;
 
 #define UDP_SERVER_STANDARD_LOG(qp, ep) {logger_type lg(boost::log::keywords::channel=UDP_SERVER_NORMAL_LOG_NAME); \
 BOOST_LOG(lg) \
-<< qp.question_id  << "," \
+<< qp.question_id           << "," \
 << ep.address().to_string() << "," \
 << TIMESTAMP;}
 
 #define UDP_SERVER_TRUNCATION_LOG(qp, ep) {logger_type lg(boost::log::keywords::channel=UDP_SERVER_TRUNCATION_LOG_NAME); \
 BOOST_LOG(lg) \
-<< qp.question_id  << "," << ep.address().to_string();}
+<< qp.question_id           << "," \
+<< ep.address().to_string() << "," \
+<< TIMESTAMP;}
 
 #define UDP_SERVER_SENDER_OVER_TCP_LOG(qp, ep) {logger_type lg(boost::log::keywords::channel=UDP_SERVER_SENDER_OVER_TCP_LOG_NAME); \
 BOOST_LOG(lg) \
-<< qp.question_id  << "," << ep.address().to_string();}
+<< qp.question_id           << "," \
+<< ep.address().to_string() << "," \
+<< TIMESTAMP;}
 
 #define UDP_SERVER_MALFORM_PACKET_LOG(ep) {logger_type lg(boost::log::keywords::channel=UDP_SERVER_MALFORM_PACKET_LOG_NAME); \
 BOOST_LOG(lg) \
-<< ep.address().to_string();}
+<< ep.address().to_string() << "," \
+<< TIMESTAMP;}
+
 
 #define UDP_SERVER_EDNS_LOG(qp, ep, edns) {logger_type lg(boost::log::keywords::channel=UDP_SERVER_EDNS_LOG_NAME); \
 BOOST_LOG(lg) \
@@ -90,11 +97,19 @@ BOOST_LOG(lg) \
 << edns.support_ECS         << "," \
 << edns.EDNS0_payload       << "," \
 << edns.ECS_subnet_address  << "," \
-<< edns.ECS_subnet_mask;}
+<< edns.ECS_subnet_mask     << "," \
+<< TIMESTAMP;}
 
 #define TCP_SERVER_STANDARD_LOG(qp, sk) {logger_type lg(boost::log::keywords::channel=TCP_SERVER_NORMAL_LOG_NAME); \
 BOOST_LOG(lg) \
-<< qp.question_id  << "," << sk.remote_endpoint().address().to_string();}
+<< qp.question_id                             << "," \
+<< sk.remote_endpoint().address().to_string() << "," \
+<< TIMESTAMP;}
+
+#define TCP_SERVER_MALFORM_LOG(ep) {logger_type lg(boost::log::keywords::channel=TCP_SERVER_MALFORM_PACKET_LOG_NAME); \
+BOOST_LOG(lg) \
+<< ep.address().to_string() << "," \
+<< TIMESTAMP;}
 
 #define UDP_SCANNER_NORMAL_LOG(ep, qid, rcode) {logger_type lg(boost::log::keywords::channel=UDP_SCANNER_NORMAL_LOG_NAME); \
 BOOST_LOG(lg) \

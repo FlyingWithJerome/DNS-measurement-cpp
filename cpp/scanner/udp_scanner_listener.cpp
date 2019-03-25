@@ -76,7 +76,14 @@ void UDPListener::reactor_read(const boost::system::error_code& error_code)
 
             new_arrival.resize(available_packet_size);
 
-            handle_receive(new_arrival, sender_info);
+            if (new_arrival.size() >= 20)
+            {
+                handle_receive(new_arrival, sender_info);
+            }
+            else
+            {
+                start_receive();
+            }
         }
         catch(...)
         {
@@ -92,6 +99,8 @@ void UDPListener::handle_receive(
 {
     Tins::DNS incoming_response;
     int number_of_answers;
+    int num_answer_in_array;
+    int num_answer_declared;
 
     try
     {
@@ -103,7 +112,9 @@ void UDPListener::handle_receive(
         goto End;
     }
 
-    number_of_answers = incoming_response.answers_count();
+    num_answer_declared = incoming_response.answers_count();
+    num_answer_in_array = incoming_response.answers().size();
+    number_of_answers = std::min(num_answer_declared, num_answer_in_array);
 
     std::cout 
     << "[UDP Listener] Address: " 
@@ -129,7 +140,7 @@ void UDPListener::handle_receive(
                 
                 std::vector<uint8_t> full_packet_jumbo;
                 std::vector<uint8_t> full_packet_ac1an0;
-                const QueryType type_of_query_ = incoming_response.queries()[0].query_type();
+                const QueryType type_of_query_ = static_cast<QueryType>(incoming_response.answers()[0].query_type());
                 
                 const std::string question_name_jumbo  = std::string("jumbo1-") + query_property.name;
                 const std::string question_name_ac1an0 = std::string("ac1an0-") + question_name_jumbo;
@@ -155,7 +166,7 @@ void UDPListener::handle_receive(
         }
         else // answer count is 0
         {
-            if (incoming_response.questions_count() > 0)
+            if (incoming_response.queries().size() > 0)
             {
                 // extract the query name to get its query property
                 std::string question_name = incoming_response.queries()[0].dname();
@@ -176,7 +187,7 @@ void UDPListener::handle_receive(
                             query_property.question_id, 
                             incoming_response.rcode(),
                             (int)query_property.jumbo_type,
-                            incoming_response.answers_count(),
+                            number_of_answers,
                             "no_(an)records_included"
                         )
                     }
