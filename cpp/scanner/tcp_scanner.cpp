@@ -178,23 +178,24 @@ void TCPScanner::inspect_response(
         return;
     }
     const QueryType query_type = static_cast<QueryType>(response.answers()[0].query_type());
+    const int number_of_answers = response.answers_count();
 
-    if(response.answers_count() == 1 and query_type == Tins::DNS::QueryType::TXT)
+    if(number_of_answers == 1 and query_type == Tins::DNS::QueryType::TXT)
     {
         result_str = "answer_ok";
         return;
     }
-    else if(response.answers_count() == 50 and query_type == Tins::DNS::QueryType::A)
+    else if(number_of_answers == 50 and query_type == Tins::DNS::QueryType::A)
     {
         result_str = "answer_ok";
         return;
     }
-    else if(response.answers_count() == 26 and query_type == Tins::DNS::QueryType::MX)
+    else if(number_of_answers == 26 and query_type == Tins::DNS::QueryType::MX)
     {
         result_str = "answer_ok";
         return;
     }
-    else if(response.answers_count() == 26 and query_type == Tins::DNS::QueryType::NS)
+    else if(number_of_answers == 26 and query_type == Tins::DNS::QueryType::NS)
     {
         result_str = "answer_ok";
         return;

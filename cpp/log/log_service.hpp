@@ -12,6 +12,7 @@
 #include <boost/log/sources/channel_logger.hpp>
 
 #include <iostream>
+#include <chrono>
 #include <fstream>
 #include <sstream>
 #include <stdio.h>
@@ -20,6 +21,8 @@
 
 #define NAMETRICK_EXTERNAL_INCLUDE_ 1
 #include "../packet/name_util.hpp"
+
+#define TIMESTAMP std::chrono::duration_cast< std::chrono::milliseconds >(std::chrono::system_clock::now().time_since_epoch()).count();
 
 enum severity_level 
 {
@@ -43,7 +46,9 @@ typedef boost::log::sources::channel_logger_mt< > logger_type;
 
 #define UDP_SERVER_STANDARD_LOG(fn, qp, ep) {logger_type lg(boost::log::keywords::channel=fn); \
 BOOST_LOG(lg) \
-<< qp.question_id  << "," << ep.address().to_string();}
+<< qp.question_id  << "," \
+<< ep.address().to_string() << "," \
+<< std::chrono::system_clock::now();}
 
 #define UDP_SERVER_TRUNCATION_LOG(fn, qp, ep) {logger_type lg(boost::log::keywords::channel=fn); \
 BOOST_LOG(lg) \
@@ -76,28 +81,26 @@ BOOST_LOG(lg) \
 BOOST_LOG(lg) \
 << qid                      << "," \
 << ep.address().to_string() << "," \
-<< rcode;}
+<< rcode                    << "," \
+<< TIMESTAMP;}
 
 #define UDP_SCANNER_TRUNCATE_LOG(fn, ep, qid, ans_num, tc) {logger_type lg(boost::log::keywords::channel=fn); \
 BOOST_LOG(lg) \
 << qid                      << "," \
 << ep.address().to_string() << "," \
 << ans_num                  << "," \
-<< tc;}
+<< tc                       << "," \
+<< TIMESTAMP;}
 
 #define UDP_SCANNER_BAD_RESPONSE_LOG(fn, ep, qid, rcode, jumbo, ancount, msg) {logger_type lg(boost::log::keywords::channel=fn); \
-char log_entry[100]; \
-sprintf( \
-  log_entry, \
-  "%u,%s,%d,%d,%d,%s", \
-  qid, \
-  ep.address().to_string().c_str(), \
-  rcode, \
-  jumbo, \
-  ancount, \
-  msg \
-); \
-BOOST_LOG(lg) << log_entry;}
+BOOST_LOG(lg) \
+<< qid                      << "," \
+<< ep.address().to_string() << "," \
+<< rcode                    << "," \
+<< jumbo                    << "," \
+<< ancount                  << "," \
+<< msg                      << "," \
+<< TIMESTAMP;}
 // BOOST_LOG(lg) \
 // << qid                      << std::string(",") \
 // << ep.address().to_string() << std::string(",") \
@@ -113,13 +116,15 @@ BOOST_LOG(lg) \
 << (int)rcode                    << "," \
 << (int)qp.jumbo_type            << "," \
 << (int)qp.normal_query_over_tcp << "," \
-<< msg;}
+<< msg                           << "," \
+<< TIMESTAMP;}
 
 #define TCP_SCANNER_MALFORMED_LOG(fn, addr, qp, msg) {logger_type lg(boost::log::keywords::channel=fn); \
 BOOST_LOG(lg) \
 << qp.question_id                << "," \
 << addr                          << "," \
 << (int)qp.normal_query_over_tcp << "," \
-<< msg;}
+<< msg                           << "," \
+<< TIMESTAMP;}
 
 #endif
