@@ -15,6 +15,7 @@
 #include <boost/thread.hpp>
 #include <boost/program_options.hpp>
 
+#include "../log/log_service.hpp"
 #include "udp_scanner_listener.hpp"
 #include "udp_scanner_sender.hpp"
 #include "tcp_scanner.hpp"
@@ -195,6 +196,8 @@ int main(int argc, char** argv)
     /* ----------- Parse User Inputs END ----------- */
 
     modify_sysctl_rmem(sys_sock_buf_size);
+
+    init_log_service(INITIALIZE_ON_SCANNER);
 
     boost::interprocess::message_queue::remove("pipe_to_tcp");
 

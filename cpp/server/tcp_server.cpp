@@ -1,7 +1,5 @@
 #include "tcp_server.hpp"
 
-constexpr char TCPServer::tcp_log_name_[];
-
 TCPServer::TCPServer(boost::asio::io_service& io_service)
 :acceptor_(
     io_service, 
@@ -11,15 +9,12 @@ TCPServer::TCPServer(boost::asio::io_service& io_service)
     )
 )
 {
-    init_new_log_file(tcp_log_name_);
-
     start_accept();
 }
 
 void TCPServer::start_accept()
 {
     TCPConnection::pointer new_connection = TCPConnection::create(
-        tcp_log_name_,
         response_factory_,
         acceptor_.get_io_service()
     );

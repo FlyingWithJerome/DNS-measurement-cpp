@@ -3,10 +3,6 @@
 constexpr uint16_t UDPListener::local_port_num;
 constexpr uint16_t UDPListener::remote_port_num;
 
-constexpr char UDPListener::udp_normal_log_[];
-constexpr char UDPListener::udp_truncate_log_[];
-constexpr char UDPListener::udp_bad_response_log_[];
-
 constexpr uint32_t UDPListener::rcv_buf_size;
 
 UDPListener::UDPListener(
@@ -33,10 +29,6 @@ UDPListener::UDPListener(
     std::cout << "[UDP Listener] UDP socket buffer size " << buf_size.value() << "\n";
 
     main_socket_.non_blocking(true);
-
-    init_new_log_file(udp_normal_log_);
-    init_new_log_file(udp_truncate_log_);
-    init_new_log_file(udp_bad_response_log_);
 
     this->start_receive();
 }
@@ -147,18 +139,18 @@ void UDPListener::handle_receive(
                 SEND_OUT_PACKET(ac1an0, full_packet_ac1an0, question_name_ac1an0, type_of_query_, sender)
 
                 SEND_TO_TCP_SCANNER(question_for_tcp)
-                UDP_SCANNER_NORMAL_LOG(udp_normal_log_, sender, query_property.question_id, "ok")
+                UDP_SCANNER_NORMAL_LOG(sender, query_property.question_id, "ok")
 
             }// not a jumbo query, will start a jumbo query END
             else if (incoming_response.truncated()) // is a jumbo query and is truncated (as our expectation)
             {
                 // send to tcp scanner
                 SEND_TO_TCP_SCANNER(question_name)
-                UDP_SCANNER_TRUNCATE_LOG(udp_truncate_log_, sender, query_property.question_id, number_of_answers, "tc_ok")
+                UDP_SCANNER_TRUNCATE_LOG(sender, query_property.question_id, number_of_answers, "tc_ok")
             }
             else // is a jumbo query and is not truncated but has a some answers
             {
-                UDP_SCANNER_TRUNCATE_LOG(udp_truncate_log_, sender, query_property.question_id, number_of_answers, "tc_fail")
+                UDP_SCANNER_TRUNCATE_LOG(sender, query_property.question_id, number_of_answers, "tc_fail")
             }
         }
         else // answer count is 0
@@ -173,14 +165,13 @@ void UDPListener::handle_receive(
                 {
                     // send to tcp scanner
                     SEND_TO_TCP_SCANNER(question_name)
-                    UDP_SCANNER_TRUNCATE_LOG(udp_truncate_log_, sender, query_property.question_id, 0, "tc_ok")
+                    UDP_SCANNER_TRUNCATE_LOG(sender, query_property.question_id, 0, "tc_ok")
                 }
                 else // 0 answer and is not truncated
                 {
                     if (query_property.jumbo_type == NameUtilities::JumboType::no_jumbo) // 0 answer and is not truncated and does not need to be truncated
                     { // 0 answer and is not truncated and we are NOT expecting truncation
                         UDP_SCANNER_BAD_RESPONSE_LOG(
-                            udp_bad_response_log_, 
                             sender, 
                             query_property.question_id, 
                             incoming_response.rcode(),
@@ -191,19 +182,19 @@ void UDPListener::handle_receive(
                     }
                     else // 0 answer and is not truncated and we are expecting truncation
                     {
-                        UDP_SCANNER_TRUNCATE_LOG(udp_truncate_log_, sender, query_property.question_id, 0, "tc_fail")
+                        UDP_SCANNER_TRUNCATE_LOG(sender, query_property.question_id, 0, "tc_fail")
                     }   
                 }
             }
             else // 0 answer and is not truncated and has no questions included (no way to tell its query property)
             {
-                UDP_SCANNER_BAD_RESPONSE_LOG(udp_bad_response_log_, sender, 0, incoming_response.rcode(), -1, 0, "no_(qr&an)records_included")
+                UDP_SCANNER_BAD_RESPONSE_LOG(sender, 0, incoming_response.rcode(), -1, 0, "no_(qr&an)records_included")
             } 
         } // answer count is 0 END
     }
     else // rcode is not NOERROR
     {
-        UDP_SCANNER_BAD_RESPONSE_LOG(udp_bad_response_log_, sender, 0, incoming_response.rcode(), -1, 0, "non_zero_rcode")
+        UDP_SCANNER_BAD_RESPONSE_LOG(sender, 0, incoming_response.rcode(), -1, 0, "non_zero_rcode")
     }
 
     End:

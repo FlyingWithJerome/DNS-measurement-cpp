@@ -10,8 +10,6 @@ class TCPServer
     public:
         TCPServer(boost::asio::io_service&);
 
-        static constexpr char tcp_log_name_[] = "tcp_normal_response.log";
-
     private:
         void start_accept();
 

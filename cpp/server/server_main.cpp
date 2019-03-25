@@ -18,7 +18,7 @@ int main()
         // udp_thread.join();
         // tcp_thread.join();
 
-        // init_log_service();
+        init_log_service(INITIALIZE_ON_SERVER);
 
         boost::asio::io_service service;
 

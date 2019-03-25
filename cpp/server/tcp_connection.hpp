@@ -7,6 +7,7 @@
 #define FROM_TCP_SERVER
 #include "server_common.hpp"
 #include "../packet/packet_factory.hpp"
+#include "../log/log_service.hpp"
 
 class TCPConnection : public boost::enable_shared_from_this<TCPConnection>
 {
@@ -14,7 +15,6 @@ class TCPConnection : public boost::enable_shared_from_this<TCPConnection>
         typedef boost::shared_ptr<TCPConnection> pointer;
 
         static pointer create(
-            const char*,
             const ResponseFactory&,
             boost::asio::io_service&
         );
@@ -25,7 +25,6 @@ class TCPConnection : public boost::enable_shared_from_this<TCPConnection>
 
     private:
         TCPConnection(
-            const char*,
             const ResponseFactory&,
             boost::asio::io_service&
         );
@@ -46,7 +45,6 @@ class TCPConnection : public boost::enable_shared_from_this<TCPConnection>
         );
 
         boost::asio::ip::tcp::socket main_socket_;
-        const char *file_name_;
         const ResponseFactory& response_factory_;
 
         uint8_t buffer_[1000];        

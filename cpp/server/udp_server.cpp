@@ -1,11 +1,5 @@
 #include "udp_server.hpp"
 
-constexpr char UDPServer::udp_log_name_[];
-constexpr char UDPServer::udp_tc_log_name_[];
-constexpr char UDPServer::udp_edns_log_name_[];
-constexpr char UDPServer::udp_malform_log_name[];
-constexpr char UDPServer::sender_over_tcp_log_name[];
-
 constexpr uint32_t UDPServer::rcv_buf_size;
 
 UDPServer::UDPServer(boost::asio::io_service& io_service)
@@ -25,12 +19,6 @@ UDPServer::UDPServer(boost::asio::io_service& io_service)
     main_socket_.get_option(buf_size);
 
     std::cout << "[UDP Server] UDP socket buffer size " << buf_size.value() << std::endl;
-
-    init_new_log_file(udp_log_name_);
-    init_new_log_file(udp_tc_log_name_);
-    init_new_log_file(udp_edns_log_name_);
-    init_new_log_file(udp_malform_log_name);
-    init_new_log_file(sender_over_tcp_log_name);
 
     main_socket_.non_blocking(true);
 
@@ -134,21 +122,21 @@ void UDPServer::handle_receive(const buffer_type& incoming_packet, std::size_t p
         );
 
         if (not query_property.will_truncate)
-            UDP_SERVER_STANDARD_LOG(udp_log_name_, query_property, sender)
+            UDP_SERVER_STANDARD_LOG(query_property, sender)
 
         else
-            UDP_SERVER_TRUNCATION_LOG(udp_tc_log_name_, query_property, sender)
+            UDP_SERVER_TRUNCATION_LOG(query_property, sender)
 
         if (query_property.normal_query_over_tcp)
-            UDP_SERVER_SENDER_OVER_TCP_LOG(sender_over_tcp_log_name, query_property, sender)
+            UDP_SERVER_SENDER_OVER_TCP_LOG(query_property, sender)
 
         EDNS edns_result(incoming_query);
-        UDP_SERVER_EDNS_LOG(udp_edns_log_name_, query_property, sender, edns_result)
+        UDP_SERVER_EDNS_LOG(query_property, sender, edns_result)
     }
     catch(...)
     {
         std::cout << "[UDP Server] " << sender.address().to_string() << " had sent a malformed packet of size " << packet_size << std::endl;
-        UDP_SERVER_MALFORM_PACKET_LOG(udp_malform_log_name, sender) 
+        UDP_SERVER_MALFORM_PACKET_LOG(sender) 
     }
 
     start_receive();

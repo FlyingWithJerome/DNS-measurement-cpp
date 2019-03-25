@@ -1,15 +1,11 @@
 #include "tcp_connection.hpp"
 
 TCPConnection::TCPConnection(
-    const char* file_name,
     const ResponseFactory& response_factory, 
     boost::asio::io_service& io_service
 )
 : main_socket_(
     io_service
-)
-, file_name_(
-    file_name
 )
 , response_factory_(
     response_factory
@@ -18,12 +14,11 @@ TCPConnection::TCPConnection(
 }
 
 TCPConnection::pointer TCPConnection::create(
-    const char* file_name,
     const ResponseFactory& response_factory,
     boost::asio::io_service& io_service
 )
 {
-    return pointer(new TCPConnection(file_name, response_factory, io_service));
+    return pointer(new TCPConnection(response_factory, io_service));
 }
 
 boost::asio::ip::tcp::socket& TCPConnection::socket()
@@ -79,7 +74,6 @@ void TCPConnection::handle_reactor_receive(
         query_property,
         raw_data
     );
-    // RESPONSE_MAKER_TCP(readable_packet, query_property)
 
     main_socket_.async_send(
         boost::asio::buffer(
@@ -93,7 +87,7 @@ void TCPConnection::handle_reactor_receive(
         )
     );
 
-    TCP_SERVER_STANDARD_LOG(file_name_, query_property, main_socket_)
+    TCP_SERVER_STANDARD_LOG(query_property, main_socket_)
 }
 
 void TCPConnection::handle_send(
