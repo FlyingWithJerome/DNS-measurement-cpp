@@ -162,7 +162,6 @@ ResponseFactory::ResponseFactory()
 std::string ResponseFactory::form_unsuppressable_hostname(const int& rotate_index) const
 {
     std::string result;
-    std::string final_result;
     std::vector<const char*> after_rotate(NUMBER_OF_CALLSIGNS);
     std::rotate_copy(
         ns_server_names, 
@@ -235,41 +234,45 @@ void ResponseFactory::make_udp_response(
             response.add_query(query);
         }
 
-        Tins::DNS::QueryClass query_class = response.queries()[0].query_class();
-        Tins::DNS::QueryType  query_type  = response.queries()[0].query_type();
-
-        if (not query_property.will_truncate or query_property.jumbo_type == NameUtilities::JumboType::jumbo_one_answer)
+        if (response.queries().size() > 0)
         {
-            switch (query_type)
+
+            Tins::DNS::QueryClass query_class = response.queries()[0].query_class();
+            Tins::DNS::QueryType  query_type  = response.queries()[0].query_type();
+
+            if (not query_property.will_truncate or query_property.jumbo_type == NameUtilities::JumboType::jumbo_one_answer)
             {
-                case Tins::DNS::QueryType::A:
-                    APPEND_ANSWER(a, number_of_answer_entries)
-                    break;
-                
-                case Tins::DNS::QueryType::NS:
-                    APPEND_ANSWER(ns, number_of_answer_entries)
-                    break;
+                switch (query_type)
+                {
+                    case Tins::DNS::QueryType::A:
+                        APPEND_ANSWER(a, number_of_answer_entries)
+                        break;
+                    
+                    case Tins::DNS::QueryType::NS:
+                        APPEND_ANSWER(ns, number_of_answer_entries)
+                        break;
 
-                case Tins::DNS::QueryType::MX:
-                    APPEND_ANSWER(mx, number_of_answer_entries)
-                    break;
+                    case Tins::DNS::QueryType::MX:
+                        APPEND_ANSWER(mx, number_of_answer_entries)
+                        break;
 
-                case Tins::DNS::QueryType::TXT:
-                    response.add_answer(
-                        Tins::DNS::resource(
-                            query_property.name,
-                            short_txt_answer,
-                            query_type,
-                            query_class,
-                            DNS_RESOURCE_TTL
-                        )
-                    );
-                    break;
+                    case Tins::DNS::QueryType::TXT:
+                        response.add_answer(
+                            Tins::DNS::resource(
+                                query_property.name,
+                                short_txt_answer,
+                                query_type,
+                                query_class,
+                                DNS_RESOURCE_TTL
+                            )
+                        );
+                        break;
 
-                default:
-                    break;
-            }
-        }
+                    default:
+                        break;
+                }
+            } // if it does not need to be truncated or it does need one answer
+        } // if (response.queries().size() > 0)
     }
     else
     {
@@ -282,6 +285,11 @@ void ResponseFactory::make_udp_response(
     {
         packet_to_be_filled[6] = (uint8_t)(query_property.expect_answer_count >> 8);
         packet_to_be_filled[7] = (uint8_t)(query_property.expect_answer_count & 0xff);
+    }
+
+    if (query_property.jumbo_type == NameUtilities::JumboType::jumbo_broken_answer)
+    {
+        packet_to_be_filled.resize(packet_to_be_filled.size() - 5);
     }
 }
 
