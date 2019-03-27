@@ -171,12 +171,12 @@ std::string ResponseFactory::form_unsuppressable_hostname(const int& rotate_inde
         after_rotate.begin()
     );
 
-    for (int index = 0; index < after_rotate.size() and result.size() <=MAX_HOSTNAME_WITHOUT_DOT_SIZE; index++)
+    for (int index = 0; index < after_rotate.size() and result.size() <= MAX_HOSTNAME_WITHOUT_DOT_SIZE; index++)
     {
         result += after_rotate[index];
     }
 
-    for (int index = after_rotate.size()-1; index >= 0 and result.size() <=MAX_HOSTNAME_WITHOUT_DOT_SIZE; index--)
+    for (int index = after_rotate.size()-1; index >= 0 and result.size() <= MAX_HOSTNAME_WITHOUT_DOT_SIZE; index--)
     {
         result += after_rotate[index];
     }
