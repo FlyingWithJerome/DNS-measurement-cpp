@@ -12,6 +12,10 @@
 #include "name_util.hpp"
 #include "../constants.hpp"
 
+#define MAX_LABEL_SIZE                63
+#define MAX_HOSTNAME_WITHOUT_DOT_SIZE 248
+#define NUMBER_OF_CALLSIGNS           26
+
 #define INT_TO_HEX(input_int, output_str) char out[20]; \
 sprintf(out, "0x%x", input_int); \
 output_str = out;
@@ -102,9 +106,11 @@ class ResponseFactory
             input_iter end
         )
         {
-            std::string result;
             const int max_size = 255;
+
+            std::string result;
             std::string txt_segment;
+
             while ( start != end )
             {
                 while ( txt_segment.size() < max_size and start != end )
@@ -134,14 +140,19 @@ class ResponseFactory
             std::vector<uint8_t>&
         ) const;
 
+        std::string form_unsuppressable_hostname(
+            const int&
+        ) const;
+
         const std::string answer_starts;
-        std::vector<std::string> tcp_answers;
+        std::vector<std::string> a_answers;
         std::vector<std::string> ns_answers;
+        std::vector<std::string> mx_answers;
 
         std::string txt_answer;
         std::string short_txt_answer;
 
-        const char* ns_server_names[26] = {
+        const char* ns_server_names[NUMBER_OF_CALLSIGNS] = {
             "Alfa",
             "Bravo",
             "Charlie",
@@ -165,7 +176,7 @@ class ResponseFactory
             "Uniform",
             "Victor",
             "Whiskey",
-            "X-ray",
+            "Xray",
             "Yankee",
             "Zulu"
         };

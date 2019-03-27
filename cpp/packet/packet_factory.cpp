@@ -136,15 +136,15 @@ ResponseFactory::ResponseFactory()
 {
     for (int num_of_resource=0; num_of_resource < NUMBER_OF_LONG_ENTRIES; num_of_resource++)
     {
-        tcp_answers.push_back(answer_starts + std::to_string(num_of_resource));
+        a_answers.push_back(answer_starts + std::to_string(num_of_resource));
     }
 
     for (int num_of_resource=0; num_of_resource < 26; num_of_resource++)
     {
-        ns_answers.push_back(
-            std::string(ns_server_names[num_of_resource]) + "-yumi.ipl.eecs.case.edu"
-        );
+        ns_answers.push_back(form_unsuppressable_hostname(num_of_resource));
     }
+
+    mx_answers = ns_answers;
 
     std::ifstream file("cpp/server/some_text.txt");
 
@@ -157,6 +157,38 @@ ResponseFactory::ResponseFactory()
 
     short_txt_answer = std::string(short_msg);
     short_txt_answer.insert(0, 1, (char)short_txt_answer.size());
+}
+
+std::string ResponseFactory::form_unsuppressable_hostname(const int& rotate_index) const
+{
+    std::string result;
+    std::string final_result;
+    std::vector<const char*> after_rotate(NUMBER_OF_CALLSIGNS);
+    std::rotate_copy(
+        ns_server_names, 
+        ns_server_names+rotate_index, 
+        ns_server_names+NUMBER_OF_CALLSIGNS,
+        after_rotate.begin()
+    );
+
+    for (int index = 0; index < after_rotate.size() and result.size() <=MAX_HOSTNAME_WITHOUT_DOT_SIZE; index++)
+    {
+        result += after_rotate[index];
+    }
+
+    for (int index = after_rotate.size()-1; index >= 0 and result.size() <=MAX_HOSTNAME_WITHOUT_DOT_SIZE; index--)
+    {
+        result += after_rotate[index];
+    }
+
+    result = result.substr(0, MAX_HOSTNAME_WITHOUT_DOT_SIZE);
+
+    for (int index = MAX_LABEL_SIZE; index < result.size(); index+=MAX_LABEL_SIZE)
+    {
+        result.insert(index, 1, '.');
+    }
+
+    return result;
 }
 
 void ResponseFactory::make_packet(
@@ -211,7 +243,7 @@ void ResponseFactory::make_udp_response(
             switch (query_type)
             {
                 case Tins::DNS::QueryType::A:
-                    APPEND_ANSWER(tcp, number_of_answer_entries)
+                    APPEND_ANSWER(a, number_of_answer_entries)
                     break;
                 
                 case Tins::DNS::QueryType::NS:
@@ -219,7 +251,7 @@ void ResponseFactory::make_udp_response(
                     break;
 
                 case Tins::DNS::QueryType::MX:
-                    APPEND_ANSWER(ns, number_of_answer_entries)
+                    APPEND_ANSWER(mx, number_of_answer_entries)
                     break;
 
                 case Tins::DNS::QueryType::TXT:
@@ -273,39 +305,41 @@ void ResponseFactory::make_tcp_response(
             response.add_query(query);
         }
 
-        Tins::DNS::QueryClass query_class = response.queries()[0].query_class();
-        Tins::DNS::QueryType  query_type  = response.queries()[0].query_type();
-
-        switch (query_type)
+        if (response.queries().size() > 0)
         {
-            case Tins::DNS::QueryType::A:
-                APPEND_ANSWER(tcp, tcp_answers.size())
-                break;
-            
-            case Tins::DNS::QueryType::NS:
-                APPEND_ANSWER(ns, ns_answers.size())
-                break;
+            const Tins::DNS::QueryClass query_class = response.queries()[0].query_class();
+            const Tins::DNS::QueryType  query_type  = response.queries()[0].query_type();
 
-            case Tins::DNS::QueryType::MX:
-                APPEND_ANSWER(ns, ns_answers.size())
-                break;
+            switch (query_type)
+            {
+                case Tins::DNS::QueryType::A:
+                    APPEND_ANSWER(a, a_answers.size())
+                    break;
+                
+                case Tins::DNS::QueryType::NS:
+                    APPEND_ANSWER(ns, ns_answers.size())
+                    break;
 
-            case Tins::DNS::QueryType::TXT:
-                response.add_answer(
-                    Tins::DNS::resource(
-                        query_property.name,
-                        txt_answer,
-                        query_type,
-                        query_class,
-                        DNS_RESOURCE_TTL
-                    )
-                );
-                break;
+                case Tins::DNS::QueryType::MX:
+                    APPEND_ANSWER(mx, mx_answers.size())
+                    break;
 
-            default:
-                break;
+                case Tins::DNS::QueryType::TXT:
+                    response.add_answer(
+                        Tins::DNS::resource(
+                            query_property.name,
+                            txt_answer,
+                            query_type,
+                            query_class,
+                            DNS_RESOURCE_TTL
+                        )
+                    );
+                    break;
+
+                default:
+                    break;
+            }
         }
-        
     }
     else
     {
