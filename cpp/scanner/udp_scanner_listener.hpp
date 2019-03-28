@@ -23,22 +23,22 @@
     outgoing.query_type=static_cast<int>(q_type);  \
     pipe_to_tcp_->send(&outgoing, sizeof(outgoing), 1);
 
-#define SEND_OUT_PACKET(alias, packet_carrier, question_name, question_type, sender) packet_configuration packet_config_##alias; \
+#define SEND_OUT_PACKET(alias, question_name, question_type, sender) packet_configuration packet_config_##alias; \
     packet_config_##alias.id     = 1338; \
     packet_config_##alias.q_name = question_name; \
     packet_config_##alias.query_type = question_type; \
+    std::vector<uint8_t> packet_carrier_##alias; \
     packet_factory_.make_packet( \
         PacketTypes::UDP_QUERY, \
         packet_config_##alias, \
-        packet_carrier \
+        packet_carrier_##alias \
     ); \
     main_socket_.async_send_to( \
-        boost::asio::buffer(packet_carrier), \
+        boost::asio::buffer(packet_carrier_##alias), \
         sender, \
         boost::bind( \
             &UDPListener::handle_send, \
             this, \
-            packet_carrier, \
             boost::asio::placeholders::error, \
             boost::asio::placeholders::bytes_transferred \
         ) \
@@ -62,7 +62,7 @@ class UDPListener
         void start_receive();
         void reactor_read(const boost::system::error_code&);
         void handle_receive(const std::vector<uint8_t>&, const boost::asio::ip::udp::endpoint&);
-        void handle_send(std::vector<uint8_t>&, const boost::system::error_code&, std::size_t);
+        void handle_send(const boost::system::error_code&, std::size_t);
 
         QueryFactory packet_factory_;
 

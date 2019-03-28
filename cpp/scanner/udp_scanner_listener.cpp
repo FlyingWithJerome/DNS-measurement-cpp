@@ -139,34 +139,22 @@ void UDPListener::handle_receive(
             {
                 std::cout << "[UDP Listener] Name: " << question_name << std::endl;
                 
-                std::vector<uint8_t> full_packet_a_jumbo;
-                std::vector<uint8_t> full_packet_a_jumbo_broken;
-                std::vector<uint8_t> full_packet_a_ac1an0;
-
-                std::vector<uint8_t> full_packet_mx_jumbo;
-                std::vector<uint8_t> full_packet_mx_jumbo_broken;
-                std::vector<uint8_t> full_packet_mx_ac1an0;
-
-                std::vector<uint8_t> full_packet_txt_jumbo;
-                std::vector<uint8_t> full_packet_txt_jumbo_broken;
-                std::vector<uint8_t> full_packet_txt_ac1an0;
-                
                 const std::string question_name_jumbo  = std::string("jumbo1-") + query_property.name;
                 const std::string question_name_ac1an0 = std::string("ac1an0-jumbo1") + question_name_jumbo;
                 const std::string question_name_broken = std::string("jumbo2-") + query_property.name;
                 const std::string question_for_tcp     = std::string("t-") + query_property.name;
 
-                SEND_OUT_PACKET(jumbo_a,   full_packet_a_jumbo,        question_name_jumbo,  QueryType::A, sender)
-                SEND_OUT_PACKET(ac1an0_a,  full_packet_a_ac1an0,       question_name_ac1an0, QueryType::A, sender)
-                SEND_OUT_PACKET(jumbo_b_a, full_packet_a_jumbo_broken, question_name_broken, QueryType::A, sender)
+                SEND_OUT_PACKET(jumbo_a,   question_name_jumbo,  QueryType::A, sender)
+                SEND_OUT_PACKET(ac1an0_a,  question_name_ac1an0, QueryType::A, sender)
+                SEND_OUT_PACKET(jumbo_b_a, question_name_broken, QueryType::A, sender)
 
-                SEND_OUT_PACKET(jumbo_mx,   full_packet_mx_jumbo,        question_name_jumbo,  QueryType::MX, sender)
-                SEND_OUT_PACKET(ac1an0_mx,  full_packet_mx_ac1an0,       question_name_ac1an0, QueryType::MX, sender)
-                SEND_OUT_PACKET(jumbo_b_mx, full_packet_mx_jumbo_broken, question_name_broken, QueryType::MX, sender)
+                SEND_OUT_PACKET(jumbo_mx,   question_name_jumbo,  QueryType::MX, sender)
+                SEND_OUT_PACKET(ac1an0_mx,  question_name_ac1an0, QueryType::MX, sender)
+                SEND_OUT_PACKET(jumbo_b_mx, question_name_broken, QueryType::MX, sender)
 
-                SEND_OUT_PACKET(jumbo_txt,   full_packet_txt_jumbo,        question_name_jumbo,  QueryType::TXT, sender)
-                SEND_OUT_PACKET(ac1an0_txt,  full_packet_txt_ac1an0,       question_name_ac1an0, QueryType::TXT, sender)
-                SEND_OUT_PACKET(jumbo_b_txt, full_packet_txt_jumbo_broken, question_name_broken, QueryType::TXT, sender)
+                SEND_OUT_PACKET(jumbo_txt,   question_name_jumbo,  QueryType::TXT, sender)
+                SEND_OUT_PACKET(ac1an0_txt,  question_name_ac1an0, QueryType::TXT, sender)
+                SEND_OUT_PACKET(jumbo_b_txt, question_name_broken, QueryType::TXT, sender)
 
                 SEND_TO_TCP_SCANNER(question_for_tcp, QueryType::A)
                 UDP_SCANNER_NORMAL_LOG(sender, query_property.question_id, "ok")
@@ -231,7 +219,7 @@ void UDPListener::handle_receive(
     start_receive();
 }
 
-void UDPListener::handle_send(std::vector<uint8_t>&, const boost::system::error_code& error_code, std::size_t)
+void UDPListener::handle_send(const boost::system::error_code& error_code, std::size_t)
 {
     if(error_code)
         std::cout << error_code.message() << std::endl;
