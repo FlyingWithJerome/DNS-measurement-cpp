@@ -2,11 +2,8 @@
 
 constexpr size_t TCPScanner::largest_tcp_response_size;
 
-TCPScanner::TCPScanner(const std::string& type_of_query)
-: type_of_query_(
-    string_to_query_type(type_of_query)
-)
-, work(
+TCPScanner::TCPScanner()
+: work(
     new boost::asio::io_service::work(io_service_)
 )
 {
@@ -55,7 +52,8 @@ int TCPScanner::service_loop() noexcept
                         &TCPScanner::perform_tcp_query,
                         this,
                         std::string(empty.ip_address),
-                        std::string(empty.question)
+                        std::string(empty.question),
+                        empty.query_type
                     )
                 );
             }
@@ -72,7 +70,8 @@ int TCPScanner::service_loop() noexcept
 
 void TCPScanner::perform_tcp_query(
     const std::string& ip_address,
-    const std::string& question
+    const std::string& question,
+    const int& query_type
 )
 {
     TCPClient client(ip_address.c_str());
@@ -94,7 +93,7 @@ void TCPScanner::perform_tcp_query(
 
     packet_configuration packet_config;
     packet_config.id     = 1338;
-    packet_config.query_type = type_of_query_;
+    packet_config.query_type = QueryType::A;
     packet_config.q_name = question;
 
     packet_factory_.make_packet(

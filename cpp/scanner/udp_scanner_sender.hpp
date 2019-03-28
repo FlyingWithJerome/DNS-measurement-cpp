@@ -90,7 +90,6 @@ class UDPSender
     public:
         UDPSender(
             const std::string&,
-            const std::string&,
             const std::uint32_t&,
             const float&,
             boost::asio::io_service&,
@@ -116,7 +115,6 @@ class UDPSender
         std::shared_ptr<boost::interprocess::message_queue> message_queue_;
 
         const uint32_t num_of_scanning_addr;
-        const QueryType type_of_query_;
 
         uint32_t num_of_packets_sent;
         std::atomic<bool>& sender_wait_signal_;

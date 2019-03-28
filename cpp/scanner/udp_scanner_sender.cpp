@@ -7,7 +7,6 @@ constexpr uint32_t UDPSender::number_of_public_addresses;
 
 UDPSender::UDPSender(
     const std::string& input_file,
-    const std::string& type_of_query,
     const std::uint32_t& send_rate,
     const float& percent_of_scan_address,
     boost::asio::io_service& io_service,
@@ -38,9 +37,6 @@ UDPSender::UDPSender(
 , num_of_scanning_addr(
     static_cast<uint32_t>(percent_of_scan_address * number_of_public_addresses)
 )
-, type_of_query_(
-    string_to_query_type(type_of_query)
-)
 {
     flow_control_sleep_.tv_nsec = NANOSECONDS / send_rate;
     flow_control_sleep_.tv_sec  = 0;
@@ -69,7 +65,7 @@ int UDPSender::start_send() noexcept
 
             packet_configuration packet_config_;
             packet_config_.id         = 1338;
-            packet_config_.query_type = type_of_query_;
+            packet_config_.query_type = QueryType::A;
             packet_config_.q_name     = hex_address + "-email-jxm959-case-edu.yumi.ipl.eecs.case.edu";
 
             packet_factory_.make_packet(

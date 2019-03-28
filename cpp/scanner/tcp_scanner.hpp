@@ -32,12 +32,12 @@
 class TCPScanner
 {
     public:
-        TCPScanner(const std::string&);
+        TCPScanner();
         TCPScanner(const TCPScanner&) = delete;
         ~TCPScanner();
         int service_loop() noexcept;
 
-        void perform_tcp_query(const std::string&, const std::string&);
+        void perform_tcp_query(const std::string&, const std::string&, const int&);
 
         static void inspect_response(
             const Tins::DNS&, 
@@ -48,8 +48,6 @@ class TCPScanner
         static constexpr size_t largest_tcp_response_size = 4600;
 
     private:
-        const QueryType type_of_query_;
-
         std::vector<std::thread> thread_nest_;
         std::shared_ptr<boost::interprocess::message_queue> pipe_to_tcp_;
 

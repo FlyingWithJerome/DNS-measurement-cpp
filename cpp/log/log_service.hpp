@@ -118,11 +118,12 @@ BOOST_LOG(lg) \
 << rcode                    << "," \
 << TIMESTAMP;}
 
-#define UDP_SCANNER_TRUNCATE_LOG(ep, qid, ans_num, tc) {logger_type lg(boost::log::keywords::channel=UDP_SCANNER_TRUNCATION_LOG_NAME); \
+#define UDP_SCANNER_TRUNCATE_LOG(ep, qid, ans_num, q_type, tc) {logger_type lg(boost::log::keywords::channel=UDP_SCANNER_TRUNCATION_LOG_NAME); \
 BOOST_LOG(lg) \
 << qid                      << "," \
 << ep.address().to_string() << "," \
 << ans_num                  << "," \
+<< q_type                   << "," \
 << tc                       << "," \
 << TIMESTAMP;}
 

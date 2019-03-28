@@ -130,38 +130,56 @@ void UDPListener::handle_receive(
 
         if (number_of_answers > 0)
         {
-            std::string question_name = incoming_response.answers()[0].dname();
+            const int type_of_query_        = incoming_response.answers()[0].query_type();
+            const std::string question_name = incoming_response.answers()[0].dname();
 
-            NameUtilities::QueryProperty query_property(question_name);
+            const NameUtilities::QueryProperty query_property(question_name);
             
             if(query_property.jumbo_type == NameUtilities::JumboType::no_jumbo) // not a jumbo query, will start a jumbo query
             {
                 std::cout << "[UDP Listener] Name: " << question_name << std::endl;
                 
-                std::vector<uint8_t> full_packet_jumbo;
-                std::vector<uint8_t> full_packet_ac1an0;
-                const QueryType type_of_query_ = static_cast<QueryType>(incoming_response.answers()[0].query_type());
+                std::vector<uint8_t> full_packet_a_jumbo;
+                std::vector<uint8_t> full_packet_a_jumbo_broken;
+                std::vector<uint8_t> full_packet_a_ac1an0;
+
+                std::vector<uint8_t> full_packet_mx_jumbo;
+                std::vector<uint8_t> full_packet_mx_jumbo_broken;
+                std::vector<uint8_t> full_packet_mx_ac1an0;
+
+                std::vector<uint8_t> full_packet_txt_jumbo;
+                std::vector<uint8_t> full_packet_txt_jumbo_broken;
+                std::vector<uint8_t> full_packet_txt_ac1an0;
                 
                 const std::string question_name_jumbo  = std::string("jumbo1-") + query_property.name;
                 const std::string question_name_ac1an0 = std::string("ac1an0-") + question_name_jumbo;
+                const std::string question_name_broken = std::string("jumbo2-") + query_property.name;
                 const std::string question_for_tcp     = std::string("t-") + query_property.name;
 
-                SEND_OUT_PACKET(jumbo,  full_packet_jumbo,  question_name_jumbo,  type_of_query_, sender)
-                SEND_OUT_PACKET(ac1an0, full_packet_ac1an0, question_name_ac1an0, type_of_query_, sender)
+                SEND_OUT_PACKET(jumbo_a,   full_packet_a_jumbo,        question_name_jumbo,  QueryType::A, sender)
+                SEND_OUT_PACKET(ac1an0_a,  full_packet_a_ac1an0,       question_name_ac1an0, QueryType::A, sender)
+                SEND_OUT_PACKET(jumbo_b_a, full_packet_a_jumbo_broken, question_name_broken, QueryType::A, sender)
 
-                SEND_TO_TCP_SCANNER(question_for_tcp)
+                SEND_OUT_PACKET(jumbo_mx,   full_packet_mx_jumbo,        question_name_jumbo,  QueryType::MX, sender)
+                SEND_OUT_PACKET(ac1an0_mx,  full_packet_mx_ac1an0,       question_name_ac1an0, QueryType::MX, sender)
+                SEND_OUT_PACKET(jumbo_b_mx, full_packet_mx_jumbo_broken, question_name_broken, QueryType::MX, sender)
+
+                SEND_OUT_PACKET(jumbo_txt,   full_packet_txt_jumbo,        question_name_jumbo,  QueryType::TXT, sender)
+                SEND_OUT_PACKET(ac1an0_txt,  full_packet_txt_ac1an0,       question_name_ac1an0, QueryType::TXT, sender)
+                SEND_OUT_PACKET(jumbo_b_txt, full_packet_txt_jumbo_broken, question_name_broken, QueryType::TXT, sender)
+
+                SEND_TO_TCP_SCANNER(question_for_tcp, QueryType::A)
                 UDP_SCANNER_NORMAL_LOG(sender, query_property.question_id, "ok")
 
             }// not a jumbo query, will start a jumbo query END
             else if (incoming_response.truncated()) // is a jumbo query and is truncated (as our expectation)
             {
-                // send to tcp scanner
-                SEND_TO_TCP_SCANNER(question_name)
-                UDP_SCANNER_TRUNCATE_LOG(sender, query_property.question_id, number_of_answers, "tc_ok")
+                SEND_TO_TCP_SCANNER(question_name, type_of_query_)
+                UDP_SCANNER_TRUNCATE_LOG(sender, query_property.question_id, number_of_answers, type_of_query_, "tc_ok")
             }
             else // is a jumbo query and is not truncated but has a some answers
             {
-                UDP_SCANNER_TRUNCATE_LOG(sender, query_property.question_id, number_of_answers, "tc_fail")
+                UDP_SCANNER_TRUNCATE_LOG(sender, query_property.question_id, number_of_answers, type_of_query_, "tc_fail")
             }
         }
         else // answer count is 0
@@ -169,14 +187,15 @@ void UDPListener::handle_receive(
             if (incoming_response.queries().size() > 0)
             {
                 // extract the query name to get its query property
-                std::string question_name = incoming_response.queries()[0].dname();
-                NameUtilities::QueryProperty query_property(question_name);
+                const int type_of_query_        = incoming_response.answers()[0].query_type();
+                const std::string question_name = incoming_response.queries()[0].dname();
+                const NameUtilities::QueryProperty query_property(question_name);
 
                 if (incoming_response.truncated()) // 0 answer but is truncated (as our expectation)
                 {
                     // send to tcp scanner
-                    SEND_TO_TCP_SCANNER(question_name)
-                    UDP_SCANNER_TRUNCATE_LOG(sender, query_property.question_id, 0, "tc_ok")
+                    SEND_TO_TCP_SCANNER(question_name, type_of_query_)
+                    UDP_SCANNER_TRUNCATE_LOG(sender, query_property.question_id, 0, type_of_query_, "tc_ok")
                 }
                 else // 0 answer and is not truncated
                 {
@@ -193,7 +212,7 @@ void UDPListener::handle_receive(
                     }
                     else // 0 answer and is not truncated and we are expecting truncation
                     {
-                        UDP_SCANNER_TRUNCATE_LOG(sender, query_property.question_id, 0, "tc_fail")
+                        UDP_SCANNER_TRUNCATE_LOG(sender, query_property.question_id, 0, type_of_query_, "tc_fail")
                     }   
                 }
             }
