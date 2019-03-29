@@ -85,53 +85,67 @@ void UDPServer::handle_receive(const buffer_type& incoming_packet, std::size_t p
     try
     {
         incoming_query = Tins::DNS(incoming_packet.data(), packet_size);
-        question_name  = incoming_query.queries()[0].dname();
-        NameUtilities::QueryProperty query_property(question_name);
 
-        std::cout 
-        << "[UDP] Processing " 
-        << question_name 
-        << " <Question Identifier> " << query_property.question_id
-        << " " << sender.address() 
-        << ":" << sender.port()
-        << " ac: " << (int)query_property.expect_answer_count
-        << " an: " << (int)query_property.expect_number_of_answers
-        << " <TR Flag>: " << query_property.will_truncate
-        << "\n";
+        if (incoming_query.queries().size() > 0)
+        {
+            question_name  = incoming_query.queries()[0].dname();
+            const int query_type = static_cast<int>(incoming_query.queries()[0].query_type());
+            const NameUtilities::QueryProperty query_property(question_name);
 
-        std::vector<uint8_t> raw_data;
+            std::cout 
+            << "[UDP] Processing " 
+            << question_name 
+            << " <Question Identifier> " << query_property.question_id
+            << " " << sender.address() 
+            << ":" << sender.port()
+            << " ac: " << (int)query_property.expect_answer_count
+            << " an: " << (int)query_property.expect_number_of_answers
+            << " <TR Flag>: " << query_property.will_truncate
+            << "\n";
 
-        response_factory.make_packet(
-            PacketTypes::UDP_RESPONSE,
-            incoming_query,
-            query_property,
-            raw_data
-        );
+            std::vector<uint8_t> raw_data;
 
-        main_socket_.async_send_to(
-            boost::asio::buffer(
+            response_factory.make_packet(
+                PacketTypes::UDP_RESPONSE,
+                incoming_query,
+                query_property,
                 raw_data
-            ), 
-            sender,
-            boost::bind(
-                &UDPServer::handle_send, 
-                this, 
-                boost::asio::placeholders::error,
-                boost::asio::placeholders::bytes_transferred
-            )
-        );
+            );
 
-        if (not query_property.will_truncate)
-            UDP_SERVER_STANDARD_LOG(query_property, sender)
+            main_socket_.async_send_to(
+                boost::asio::buffer(
+                    raw_data
+                ), 
+                sender,
+                boost::bind(
+                    &UDPServer::handle_send, 
+                    this, 
+                    boost::asio::placeholders::error,
+                    boost::asio::placeholders::bytes_transferred
+                )
+            );
 
+            if (not query_property.will_truncate)
+            {
+                UDP_SERVER_STANDARD_LOG(query_property, sender, query_type)
+            }
+            else
+            {
+                UDP_SERVER_TRUNCATION_LOG(query_property, sender, query_type)
+            }
+
+            if (query_property.normal_query_over_tcp)
+            {
+                UDP_SERVER_SENDER_OVER_TCP_LOG(query_property, sender)
+            }
+
+            EDNS edns_result(incoming_query);
+            UDP_SERVER_EDNS_LOG(query_property, sender, edns_result)
+        }
         else
-            UDP_SERVER_TRUNCATION_LOG(query_property, sender)
+        {
 
-        if (query_property.normal_query_over_tcp)
-            UDP_SERVER_SENDER_OVER_TCP_LOG(query_property, sender)
-
-        EDNS edns_result(incoming_query);
-        UDP_SERVER_EDNS_LOG(query_property, sender, edns_result)
+        }
     }
     catch(...)
     {

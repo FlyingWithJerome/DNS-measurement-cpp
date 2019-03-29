@@ -140,7 +140,7 @@ void UDPListener::handle_receive(
                 std::cout << "[UDP Listener] Name: " << question_name << std::endl;
                 
                 const std::string question_name_jumbo  = std::string("jumbo1-") + query_property.name;
-                const std::string question_name_ac1an0 = std::string("ac1an0-jumbo1") + question_name_jumbo;
+                const std::string question_name_ac1an0 = std::string("ac1an0-") + question_name_jumbo;
                 const std::string question_name_broken = std::string("jumbo2-") + query_property.name;
                 const std::string question_for_tcp     = std::string("t-") + query_property.name;
 

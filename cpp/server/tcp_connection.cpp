@@ -69,28 +69,36 @@ void TCPConnection::handle_reactor_receive(
         return;
     }
 
-    NameUtilities::QueryProperty query_property(readable_packet.queries()[0].dname());
+    if (readable_packet.queries().size() > 0)
+    {
+        const NameUtilities::QueryProperty query_property(readable_packet.queries()[0].dname());
+        const int query_type = static_cast<int>(readable_packet.queries()[0].query_type());
 
-    std::vector<uint8_t> raw_data;
+        std::vector<uint8_t> raw_data;
 
-    response_factory_.make_packet(
-        PacketTypes::TCP_RESPONSE,
-        readable_packet,
-        query_property,
-        raw_data
-    );
+        response_factory_.make_packet(
+            PacketTypes::TCP_RESPONSE,
+            readable_packet,
+            query_property,
+            raw_data
+        );
 
-    main_socket_.async_send(
-        boost::asio::buffer(raw_data), 
-        boost::bind(
-            &TCPConnection::handle_send, 
-            shared_from_this(), 
-            boost::asio::placeholders::error,
-            boost::asio::placeholders::bytes_transferred
-        )
-    );
+        main_socket_.async_send(
+            boost::asio::buffer(raw_data), 
+            boost::bind(
+                &TCPConnection::handle_send, 
+                shared_from_this(), 
+                boost::asio::placeholders::error,
+                boost::asio::placeholders::bytes_transferred
+            )
+        );
 
-    TCP_SERVER_STANDARD_LOG(query_property, main_socket_)
+        TCP_SERVER_STANDARD_LOG(query_property, main_socket_, query_type)
+    }
+    else
+    {
+        TCP_SERVER_MALFORM_LOG(remote_endpoint)
+    }
 }
 
 void TCPConnection::handle_send(

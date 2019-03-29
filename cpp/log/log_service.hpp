@@ -64,16 +64,18 @@ BOOST_LOG_ATTRIBUTE_KEYWORD(a_channel, "Channel", std::string)
 
 typedef boost::log::sources::channel_logger_mt<std::string> logger_type;
 
-#define UDP_SERVER_STANDARD_LOG(qp, ep) {logger_type lg(boost::log::keywords::channel=UDP_SERVER_NORMAL_LOG_NAME); \
+#define UDP_SERVER_STANDARD_LOG(qp, ep, q_type) {logger_type lg(boost::log::keywords::channel=UDP_SERVER_NORMAL_LOG_NAME); \
 BOOST_LOG(lg) \
 << qp.question_id           << "," \
 << ep.address().to_string() << "," \
+<< q_type                   << "," \
 << TIMESTAMP;}
 
-#define UDP_SERVER_TRUNCATION_LOG(qp, ep) {logger_type lg(boost::log::keywords::channel=UDP_SERVER_TRUNCATION_LOG_NAME); \
+#define UDP_SERVER_TRUNCATION_LOG(qp, ep, q_type) {logger_type lg(boost::log::keywords::channel=UDP_SERVER_TRUNCATION_LOG_NAME); \
 BOOST_LOG(lg) \
 << qp.question_id           << "," \
 << ep.address().to_string() << "," \
+<< q_type                   << "," \
 << TIMESTAMP;}
 
 #define UDP_SERVER_SENDER_OVER_TCP_LOG(qp, ep) {logger_type lg(boost::log::keywords::channel=UDP_SERVER_SENDER_OVER_TCP_LOG_NAME); \
@@ -100,10 +102,11 @@ BOOST_LOG(lg) \
 << edns.ECS_subnet_mask     << "," \
 << TIMESTAMP;}
 
-#define TCP_SERVER_STANDARD_LOG(qp, sk) {logger_type lg(boost::log::keywords::channel=TCP_SERVER_NORMAL_LOG_NAME); \
+#define TCP_SERVER_STANDARD_LOG(qp, sk, q_type) {logger_type lg(boost::log::keywords::channel=TCP_SERVER_NORMAL_LOG_NAME); \
 BOOST_LOG(lg) \
 << qp.question_id                             << "," \
 << sk.remote_endpoint().address().to_string() << "," \
+<< q_type                                     << "," \
 << TIMESTAMP;}
 
 #define TCP_SERVER_MALFORM_LOG(ep) {logger_type lg(boost::log::keywords::channel=TCP_SERVER_MALFORM_PACKET_LOG_NAME); \
