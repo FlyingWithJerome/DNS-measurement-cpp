@@ -134,7 +134,7 @@ BOOST_LOG(lg) \
 BOOST_LOG(lg) \
 << qid                      << "," \
 << ep.address().to_string() << "," \
-<< rcode                    << "," \
+<< (int)rcode               << "," \
 << jumbo                    << "," \
 << ancount                  << "," \
 << msg                      << "," \

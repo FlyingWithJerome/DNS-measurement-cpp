@@ -175,7 +175,7 @@ void UDPListener::handle_receive(
             if (incoming_response.queries().size() > 0)
             {
                 // extract the query name to get its query property
-                const int type_of_query_        = incoming_response.answers()[0].query_type();
+                const int type_of_query_        = incoming_response.queries()[0].query_type();
                 const std::string question_name = incoming_response.queries()[0].dname();
                 const NameUtilities::QueryProperty query_property(question_name);
 
