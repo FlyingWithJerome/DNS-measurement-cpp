@@ -193,6 +193,7 @@ void UDPListener::handle_receive(
                             sender, 
                             query_property.question_id, 
                             incoming_response.rcode(),
+                            type_of_query_,
                             (int)query_property.jumbo_type,
                             number_of_answers,
                             "no_(an)records_included"
@@ -200,19 +201,41 @@ void UDPListener::handle_receive(
                     }
                     else // 0 answer and is not truncated and we are expecting truncation
                     {
-                        UDP_SCANNER_TRUNCATE_LOG(sender, query_property.question_id, 0, type_of_query_, "tc_fail")
+                        UDP_SCANNER_TRUNCATE_LOG(
+                            sender, 
+                            query_property.question_id, 
+                            0, 
+                            type_of_query_, 
+                            "tc_fail"
+                        )
                     }   
                 }
             }
             else // 0 answer and is not truncated and has no questions included (no way to tell its query property)
             {
-                UDP_SCANNER_BAD_RESPONSE_LOG(sender, 0, incoming_response.rcode(), -1, 0, "no_(qr&an)records_included")
+                UDP_SCANNER_BAD_RESPONSE_LOG(
+                    sender, 
+                    INVALID_QUESTION_ID, 
+                    incoming_response.rcode(), 
+                    INVALID_QUERY_TYPE,
+                    INVALID_JUMBO_TYPE, 
+                    0, 
+                    "no_(qr&an)records_included"
+                )
             } 
         } // answer count is 0 END
     }
     else // rcode is not NOERROR
     {
-        UDP_SCANNER_BAD_RESPONSE_LOG(sender, 0, incoming_response.rcode(), -1, 0, "non_zero_rcode")
+        UDP_SCANNER_BAD_RESPONSE_LOG(
+            sender, 
+            INVALID_QUESTION_ID, 
+            incoming_response.rcode(), 
+            INVALID_QUERY_TYPE,
+            INVALID_JUMBO_TYPE, 
+            INVALID_NUM_OF_ANSWERS, 
+            "non_zero_rcode"
+        )
     }
 
     End:

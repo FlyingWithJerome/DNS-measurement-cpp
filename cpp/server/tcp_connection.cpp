@@ -41,17 +41,19 @@ void TCPConnection::start()
 
 
 void TCPConnection::handle_reactor_receive(
-    const boost::system::error_code& error, 
+    const boost::system::error_code& receive_error, 
     std::size_t read_size
 )
 {
-    boost::asio::ip::tcp::endpoint remote_endpoint = main_socket_.remote_endpoint();
-    if (error)
+    boost::system::error_code endpoint_error;
+    boost::asio::ip::tcp::endpoint remote_endpoint = main_socket_.remote_endpoint(endpoint_error);
+
+    if (receive_error or endpoint_error) // error in receiving or resolving the remote endpoint
     {
-        std::cout << error.message() << std::endl;
+        std::cout << receive_error.message() << " | " << endpoint_error.message() << std::endl;
         return;
     }
-    else if (read_size <= 2)
+    else if (read_size <= 2) // not a proper size of a DNS packet
     {
         TCP_SERVER_MALFORM_LOG(remote_endpoint)        
         return;

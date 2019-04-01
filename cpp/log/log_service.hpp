@@ -44,6 +44,11 @@
 #define TCP_SERVER_NORMAL_LOG_NAME           "tcp_server_normal_response.log"
 #define TCP_SERVER_MALFORM_PACKET_LOG_NAME   "tcp_server_malform_record.log"
 
+#define INVALID_JUMBO_TYPE     -1
+#define INVALID_QUERY_TYPE     -1
+#define INVALID_NUM_OF_ANSWERS -1
+#define INVALID_QUESTION_ID    -1
+
 enum severity_level 
 {
   trace,
@@ -130,11 +135,12 @@ BOOST_LOG(lg) \
 << tc                       << "," \
 << TIMESTAMP;}
 
-#define UDP_SCANNER_BAD_RESPONSE_LOG(ep, qid, rcode, jumbo, ancount, msg) {logger_type lg(boost::log::keywords::channel=UDP_SCANNER_BAD_RESPONSE_LOG_NAME); \
+#define UDP_SCANNER_BAD_RESPONSE_LOG(ep, qid, rcode, q_type, jumbo, ancount, msg) {logger_type lg(boost::log::keywords::channel=UDP_SCANNER_BAD_RESPONSE_LOG_NAME); \
 BOOST_LOG(lg) \
 << qid                      << "," \
 << ep.address().to_string() << "," \
 << (int)rcode               << "," \
+<< (int)q_type              << "," \
 << jumbo                    << "," \
 << ancount                  << "," \
 << msg                      << "," \
