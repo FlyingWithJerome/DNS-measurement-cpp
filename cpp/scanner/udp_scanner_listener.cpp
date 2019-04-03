@@ -57,7 +57,6 @@ void UDPListener::reactor_read(const boost::system::error_code& error_code)
     if(error_code)
     {
         std::cout << "[UDP Listener] err msg " << error_code.message() << std::endl;
-        start_receive();
     }
     else
     {
@@ -174,7 +173,7 @@ void UDPListener::handle_receive(
         {
             if (incoming_response.queries().size() > 0)
             {
-                // extract the query name to get its query property
+                // extract the query name from questions to get its query property
                 const int type_of_query_        = incoming_response.queries()[0].query_type();
                 const std::string question_name = incoming_response.queries()[0].dname();
                 const NameUtilities::QueryProperty query_property(question_name);

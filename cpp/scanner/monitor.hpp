@@ -25,6 +25,7 @@ class BufferMonitor
         BufferMonitor(const BufferMonitor&) = delete;
 
         void start_monitor();
+        void stop_monitor();
 
     private:
         bool check_buffer();
@@ -35,6 +36,8 @@ class BufferMonitor
         std::uint32_t socket_buffer_size_;
         std::size_t   msg_queue_size_;
         std::atomic<bool>& sender_should_wait_;
+
+        bool is_stop;
 };  
 
 #endif

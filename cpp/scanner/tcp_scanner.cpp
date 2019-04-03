@@ -7,7 +7,6 @@ TCPScanner::TCPScanner()
     new boost::asio::io_service::work(io_service_)
 )
 {
-
     try
     {
         pipe_to_tcp_.reset(
@@ -34,7 +33,6 @@ TCPScanner::TCPScanner()
 
 int TCPScanner::service_loop() noexcept
 {
-
     while (true)
     {
         message_pack  empty;
@@ -47,15 +45,22 @@ int TCPScanner::service_loop() noexcept
 
             if(recv_status and recv_size)
             {
-                io_service_.post(
-                    boost::bind(
-                        &TCPScanner::perform_tcp_query,
-                        this,
-                        std::string(empty.ip_address),
-                        std::string(empty.question),
-                        empty.query_type
-                    )
-                );
+                if (empty.query_type != -1)
+                {
+                    io_service_.post(
+                        boost::bind(
+                            &TCPScanner::perform_tcp_query,
+                            this,
+                            std::string(empty.ip_address),
+                            std::string(empty.question),
+                            empty.query_type
+                        )
+                    );
+                }
+                else
+                {
+                    break;
+                }
             }
             else
             {
@@ -84,7 +89,7 @@ void TCPScanner::perform_tcp_query(
 
     if (not client.connect())
     {
-        TCP_SCANNER_MALFORMED_LOG(ip_address.c_str(), query_property, "connect_timeout")
+        TCP_SCANNER_MALFORMED_LOG(ip_address.c_str(), query_property, query_type, "connect_timeout")
         return;
     }
     
@@ -92,9 +97,9 @@ void TCPScanner::perform_tcp_query(
     std::vector<uint8_t> response_packet;
 
     packet_configuration packet_config;
-    packet_config.id     = 1338;
-    packet_config.query_type = QueryType::A;
-    packet_config.q_name = question;
+    packet_config.id         = 1338;
+    packet_config.query_type = static_cast<QueryType>(query_type);
+    packet_config.q_name     = question;
 
     packet_factory_.make_packet(
         PacketTypes::TCP_QUERY,
@@ -104,20 +109,20 @@ void TCPScanner::perform_tcp_query(
 
     if (client.send(full_packet) <= 0)
     {
-        TCP_SCANNER_MALFORMED_LOG(ip_address.c_str(), query_property, "fail_to_send")
+        TCP_SCANNER_MALFORMED_LOG(ip_address.c_str(), query_property, query_type, "fail_to_send")
         return;
     }
     
     if (client.receive(response_packet) <= 0)
     {
-        TCP_SCANNER_MALFORMED_LOG(ip_address.c_str(), query_property, "recv_timeout")
+        TCP_SCANNER_MALFORMED_LOG(ip_address.c_str(), query_property, query_type, "recv_timeout")
         return;
     }
 
     if ( response_packet.size() < 2 )
     {
         // write to malformed packet
-        TCP_SCANNER_MALFORMED_LOG(ip_address.c_str(), query_property, "receive_less_than_2_bytes")
+        TCP_SCANNER_MALFORMED_LOG(ip_address.c_str(), query_property, query_type, "receive_less_than_2_bytes")
         return;
     }
 
@@ -129,7 +134,7 @@ void TCPScanner::perform_tcp_query(
     }
     catch (...)
     {
-        TCP_SCANNER_MALFORMED_LOG(ip_address.c_str(), query_property, "un-parsable_packet")
+        TCP_SCANNER_MALFORMED_LOG(ip_address.c_str(), query_property, query_type, "un-parsable_packet")
         return;
     }
     if (readable_response.answers_count() > 0)
@@ -141,14 +146,15 @@ void TCPScanner::perform_tcp_query(
 
         TCP_SCANNER_NORMAL_LOG(
             ip_address, 
-            query_property, 
+            query_property,
+            query_type,
             readable_response.rcode(), 
             result
         )
     }
     else
     {
-        TCP_SCANNER_MALFORMED_LOG(ip_address.c_str(), query_property, "zero_answer_count")
+        TCP_SCANNER_MALFORMED_LOG(ip_address.c_str(), query_property, query_type, "zero_answer_count")
     }
 }
 
@@ -173,31 +179,21 @@ void TCPScanner::inspect_response(
     const QueryType query_type = static_cast<QueryType>(response.answers()[0].query_type());
     const int number_of_answers = response.answers_count();
 
-    if(number_of_answers == 1 and query_type == Tins::DNS::QueryType::TXT)
+    if( (number_of_answers == 1  and query_type == Tins::DNS::QueryType::TXT)
+        or
+        (number_of_answers == 50 and query_type == Tins::DNS::QueryType::A)
+        or
+        (number_of_answers == 26 and query_type == Tins::DNS::QueryType::MX)
+        or
+        (number_of_answers == 26 and query_type == Tins::DNS::QueryType::NS)
+        or
+        query_property.normal_query_over_tcp
+    )
     {
         result_str = "answer_ok";
         return;
     }
-    else if(number_of_answers == 50 and query_type == Tins::DNS::QueryType::A)
-    {
-        result_str = "answer_ok";
-        return;
-    }
-    else if(number_of_answers == 26 and query_type == Tins::DNS::QueryType::MX)
-    {
-        result_str = "answer_ok";
-        return;
-    }
-    else if(number_of_answers == 26 and query_type == Tins::DNS::QueryType::NS)
-    {
-        result_str = "answer_ok";
-        return;
-    }
-    else if(query_property.normal_query_over_tcp)
-    {
-        result_str = "answer_ok";
-        return;
-    }
+
     else
     {
         std::stringstream result_builder;
@@ -213,9 +209,11 @@ void TCPScanner::inspect_response(
 
 TCPScanner::~TCPScanner()
 {
+    std::cout << "[TCP Scanner] Going to exit, Wait for unfinished jobs...\n";
     work.reset();
     io_service_.stop();
     thread_pool_.join_all();
+    std::cout << "[TCP Scanner] TCP scanner successfully exited\n";
 }
 
 

@@ -37,6 +37,9 @@ UDPSender::UDPSender(
 , num_of_scanning_addr(
     static_cast<uint32_t>(percent_of_scan_address * number_of_public_addresses)
 )
+, is_stop(
+    false
+)
 {
     flow_control_sleep_.tv_nsec = NANOSECONDS / send_rate;
     flow_control_sleep_.tv_sec  = 0;
@@ -51,11 +54,16 @@ UDPSender::UDPSender(
 int UDPSender::start_send() noexcept
 {
     std::string target;
-    while(std::getline(file_input_, target) and num_of_packets_sent <= num_of_scanning_addr)
+    while((not is_stop) and std::getline(file_input_, target) and num_of_packets_sent <= num_of_scanning_addr)
     {
         try
         {
             unsigned int address = std::stoul(target, nullptr, 10);
+            if (not is_public_ip_address(address))
+            {
+                continue;
+            }
+
             std::string hex_address;
 
             INT_TO_HEX(address, hex_address)
@@ -103,13 +111,17 @@ int UDPSender::start_send() noexcept
             );
             num_of_packets_sent++;
         }
+        catch(const KeyboardInterruption& e)
+        {
+            std::cout << "[UDP Scanner] UDP scanner is exiting...\n";
+            return -1;
+        }
         catch(const std::exception& e)
         {
             std::cerr << "[UDP Scanner] message from loop " << e.what() << '\n';
         }
         
     }
-    std::cout << "[UDP Scanner] Total Packets Sent: " << num_of_packets_sent << std::endl;
     return 0;
 }
 
@@ -119,5 +131,37 @@ void UDPSender::handle_send(const boost::system::error_code& error_code, std::si
     {
         std::cout << error_code.message() << std::endl;
     }
+}
+
+int UDPSender::stop_send() noexcept
+{
+    is_stop = true;
+}
+
+UDPSender::~UDPSender()
+{
+    std::cout << "[UDP Scanner] Total Packets Sent: " << num_of_packets_sent << std::endl;
+}
+
+bool is_public_ip_address(const unsigned int& int_address)
+{
+    return
+        !((0          <= int_address) &&  (int_address <= 16777215)) &&
+        !((167772160  <= int_address) &&  (int_address <= 184549375)) &&
+        !((1681915904 <= int_address) &&  (int_address <= 1686110207)) &&
+        !((2130706432 <= int_address) &&  (int_address <= 2147483647)) &&
+        !((2851995648 <= int_address) &&  (int_address <= 2852061183)) &&
+        !((2886729728 <= int_address) &&  (int_address <= 2887778303)) &&
+        !((3221225472 <= int_address) &&  (int_address <= 3221225727)) &&
+        !((3221225984 <= int_address) &&  (int_address <= 3221226239)) &&
+        !((3227017984 <= int_address) &&  (int_address <= 3227018239)) &&
+        !((3232235520 <= int_address) &&  (int_address <= 3232301055)) &&
+        !((3323068416 <= int_address) &&  (int_address <= 3323199487)) &&
+        !((3325256704 <= int_address) &&  (int_address <= 3325256959)) &&
+        !((3405803776 <= int_address) &&  (int_address <= 3405804031)) &&
+        !((3758096384 <= int_address) &&  (int_address <= 4026531839)) &&
+        !((4026531840 <= int_address) &&  (int_address <= 4294967295)) &&
+        // !(int_address == 216816994) && // AT&T's
+        !(int_address == 4294967295);
 }
 

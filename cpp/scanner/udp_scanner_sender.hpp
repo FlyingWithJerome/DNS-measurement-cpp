@@ -23,9 +23,12 @@
 #include <boost/interprocess/ipc/message_queue.hpp>
 
 #include "token_bucket.hpp"
+#include "keyboard_interruption.hpp"
 #include "../packet/packet_factory.hpp"
 
 #define NANOSECONDS 1000000000L
+
+bool is_public_ip_address(const uint32_t&);
 
 class raw
 {
@@ -97,7 +100,10 @@ class UDPSender
             std::atomic<bool>&
         );
 
+        ~UDPSender();
+
         int start_send() noexcept;
+        int stop_send() noexcept;
 
         static constexpr uint16_t local_port_num  = 2999;
         static constexpr uint16_t remote_port_num = 53;
@@ -125,6 +131,8 @@ class UDPSender
 
         struct timespec flow_control_sleep_;
         struct timespec flow_control_sleep_idle_;
+
+        bool is_stop;
 };
 
 #endif

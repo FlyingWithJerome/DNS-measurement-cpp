@@ -19,6 +19,7 @@
 #include <boost/chrono.hpp>
 #include <boost/thread.hpp>
 #include <boost/interprocess/ipc/message_queue.hpp>
+#include <boost/interprocess/managed_shared_memory.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/system/system_error.hpp>
 

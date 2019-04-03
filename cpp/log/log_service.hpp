@@ -146,20 +146,22 @@ BOOST_LOG(lg) \
 << msg                      << "," \
 << TIMESTAMP;}
 
-#define TCP_SCANNER_NORMAL_LOG(addr, qp, rcode, msg) {logger_type lg(boost::log::keywords::channel=TCP_SCANNER_NORMAL_LOG_NAME); \
+#define TCP_SCANNER_NORMAL_LOG(addr, qp, q_type, rcode, msg) {logger_type lg(boost::log::keywords::channel=TCP_SCANNER_NORMAL_LOG_NAME); \
 BOOST_LOG(lg) \
 << qp.question_id                << "," \
 << addr                          << "," \
 << (int)rcode                    << "," \
+<< (int)q_type                   << "," \
 << (int)qp.jumbo_type            << "," \
 << (int)qp.normal_query_over_tcp << "," \
 << msg                           << "," \
 << TIMESTAMP;}
 
-#define TCP_SCANNER_MALFORMED_LOG(addr, qp, msg) {logger_type lg(boost::log::keywords::channel=TCP_SCANNER_BAD_RESPONSE_LOG_NAME); \
+#define TCP_SCANNER_MALFORMED_LOG(addr, qp, q_type, msg) {logger_type lg(boost::log::keywords::channel=TCP_SCANNER_BAD_RESPONSE_LOG_NAME); \
 BOOST_LOG(lg) \
 << qp.question_id                << "," \
 << addr                          << "," \
+<< (int)q_type                   << "," \
 << (int)qp.normal_query_over_tcp << "," \
 << msg                           << "," \
 << TIMESTAMP;}
