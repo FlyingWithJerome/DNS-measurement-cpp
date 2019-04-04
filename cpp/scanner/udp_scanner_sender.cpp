@@ -199,7 +199,7 @@ bool is_public_ip_address(const unsigned int& int_address)
         !((3405803776 <= int_address) &&  (int_address <= 3405804031)) &&
         !((3758096384 <= int_address) &&  (int_address <= 4026531839)) &&
         !((4026531840 <= int_address) &&  (int_address <= 4294967295)) &&
-        // !((216816960 <= int_address)  &&  (int_address <= 216817023)) && // AT&T's
+        !((216816960 <= int_address)  &&  (int_address <= 216817023)) && // AT&T's
         !(int_address == 4294967295);
 }
 
