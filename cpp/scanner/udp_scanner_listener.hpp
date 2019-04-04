@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <vector>
 #include <memory>
+#include <mutex>
 
 #include <boost/asio.hpp>
 #include <boost/bind.hpp>
@@ -16,6 +17,12 @@
 #include "../packet/name_util.hpp"
 #include "../packet/packet_factory.hpp"
 #include "message_queue_packet.hpp"
+#include "lru.hpp"
+
+#define LRU_SIZE 10000
+#define MAX_ALLOW_NUM_PACK_RECV 100
+
+#define STOP_IN_EMERGENCY() if (emergency_stop_){ std::cout << "[UDP Listener] Emergency status: " << emergency_stop_ << "\n"; return;}
 
 #define SEND_TO_TCP_SCANNER(q_name, q_type) message_pack outgoing; \
     strcpy(outgoing.ip_address, sender.address().to_string().c_str()); \
@@ -47,7 +54,11 @@
 class UDPListener
 {
     public:
-        UDPListener(boost::asio::io_service&, std::shared_ptr<boost::interprocess::message_queue>&);
+        UDPListener(
+            boost::asio::io_service&, 
+            std::shared_ptr<boost::interprocess::message_queue>&,
+            std::atomic<bool>&
+        );
         UDPListener(const UDPListener&) = delete;
         ~UDPListener();
 
@@ -64,12 +75,17 @@ class UDPListener
         void handle_receive(const std::vector<uint8_t>&, const boost::asio::ip::udp::endpoint&);
         void handle_send(const boost::system::error_code&, std::size_t);
 
+        bool query_lru(const std::string&);
+
+        std::atomic<bool>& emergency_stop_;
+
         QueryFactory packet_factory_;
 
         boost::asio::ip::udp::socket   main_socket_;
         boost::asio::ip::udp::endpoint remote_endpoint_;
 
         std::shared_ptr<boost::interprocess::message_queue> pipe_to_tcp_;
+        lru11::Cache<std::string, int, std::mutex> number_of_recv_responses_;
 };
 
 #endif

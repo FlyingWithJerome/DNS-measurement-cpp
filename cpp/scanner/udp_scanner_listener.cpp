@@ -7,7 +7,8 @@ constexpr uint32_t UDPListener::rcv_buf_size;
 
 UDPListener::UDPListener(
     boost::asio::io_service& io_service,
-    std::shared_ptr<boost::interprocess::message_queue>& message_queue_
+    std::shared_ptr<boost::interprocess::message_queue>& message_queue_,
+    std::atomic<bool>& emergency_stop
 )
 : main_socket_(
     io_service,
@@ -19,7 +20,14 @@ UDPListener::UDPListener(
 , pipe_to_tcp_(
     message_queue_
 )
+, number_of_recv_responses_(
+    LRU_SIZE
+)
+, emergency_stop_(
+    emergency_stop
+)
 {
+    std::cout << "[UDP Listener] emergency_stop_ address: " << &emergency_stop_ << "\n";
     boost::asio::socket_base::receive_buffer_size option(rcv_buf_size);
     main_socket_.set_option(option);
 
@@ -36,6 +44,8 @@ UDPListener::UDPListener(
 
 void UDPListener::start_receive()
 {
+    STOP_IN_EMERGENCY()
+
     main_socket_.async_receive_from(
         boost::asio::null_buffers(),
         remote_endpoint_,
@@ -54,6 +64,8 @@ boost::asio::ip::udp::socket& UDPListener::get_socket()
 
 void UDPListener::reactor_read(const boost::system::error_code& error_code)
 {
+    STOP_IN_EMERGENCY()
+
     if(error_code)
     {
         std::cout << "[UDP Listener] err msg " << error_code.message() << std::endl;
@@ -96,10 +108,25 @@ void UDPListener::handle_receive(
     const boost::asio::ip::udp::endpoint& sender
 )
 {
+    STOP_IN_EMERGENCY()
+
     Tins::DNS incoming_response;
     int number_of_answers;
     int num_answer_in_array;
     int num_answer_declared;
+
+    const std::string& remote_addr = sender.address().to_string();
+
+    if (not query_lru(remote_addr))
+    {
+        std::cout 
+        << "[UDP Listener] remote address: "
+        << remote_addr
+        << " sends too many packets, graciously stopping...\n";
+        
+        emergency_stop_ = true;
+        return;
+    }
 
     try
     {
@@ -245,6 +272,30 @@ void UDPListener::handle_send(const boost::system::error_code& error_code, std::
 {
     if(error_code)
         std::cout << error_code.message() << std::endl;
+}
+
+bool UDPListener::query_lru(const std::string& ip_address)
+{
+    int number_of_packet_recv = 0;
+    if (not number_of_recv_responses_.tryGet(ip_address, number_of_packet_recv))
+    {
+        number_of_recv_responses_.insert(ip_address, 1);
+        return true;
+    }
+    else
+    {
+        if (number_of_packet_recv >= MAX_ALLOW_NUM_PACK_RECV)
+        {
+            return false;
+        }
+        else
+        {
+            number_of_recv_responses_.insert(ip_address, number_of_packet_recv+1);
+            return true;
+        }
+    }
+    
+
 }
 
 UDPListener::~UDPListener()

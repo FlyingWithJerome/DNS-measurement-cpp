@@ -63,6 +63,18 @@ interruption_handler.sa_flags   = 0; \
 sigemptyset(&interruption_handler.sa_mask); \
 sigaction(SIGINT, &interruption_handler, nullptr);
 
+#define PARENT_CLEAN_UP() std::cout << "[General] Doing cleaning up\n"; \
+message_pack stop_signal; \
+stop_signal.query_type = -1; \
+message_queue->send(&stop_signal, sizeof(stop_signal), 2); \
+sender.stop_send(); \
+std::cout << "[General] Stopping monitor\n"; \
+monitor.stop_monitor(); \
+std::cout << "[General] Stopping io services\n"; \
+io_service_listener.stop(); \
+io_service_sender.stop(); \
+std::cout << "[General] Stopping threads\n"; 
+
 int main(int argc, char** argv)
 {
     /* ----------- Parse User Inputs ----------- */
@@ -73,6 +85,7 @@ int main(int argc, char** argv)
         ("send_rate", boost::program_options::value<uint32_t>(),    "packet send rate")
         ("perc_of_addr", boost::program_options::value<float>(), "percent of scanning addresses")
         ("sys_rmem", boost::program_options::value<uint32_t>(), "system level socket buffer size")
+        ("start_line", boost::program_options::value<uint32_t>(), "start from which line")
     ;
 
     boost::program_options::variables_map variables_map_;
@@ -96,6 +109,11 @@ int main(int argc, char** argv)
     variables_map_.count("send_rate") > 0          ? 
     variables_map_["send_rate"].as<std::uint32_t>() : 
     40000;
+
+    std::uint32_t start_line = 
+    variables_map_.count("start_line") > 0          ? 
+    variables_map_["start_line"].as<std::uint32_t>() : 
+    0;
 
     float perc_of_addr = 
     variables_map_.count("perc_of_addr") > 0   ? 
@@ -149,6 +167,7 @@ int main(int argc, char** argv)
         boost::thread_group thread_pool_;
 
         std::atomic<bool> sender_wait_flag{false};
+        std::atomic<bool> emergency_stop_flag{false};
 
         boost::asio::io_service io_service_listener;
         boost::asio::io_service io_service_sender;
@@ -156,15 +175,17 @@ int main(int argc, char** argv)
         UDPSender sender(
             file_path, 
             send_rate, 
+            start_line,
             perc_of_addr,
             io_service_sender, 
             message_queue, 
-            sender_wait_flag
+            sender_wait_flag,
+            emergency_stop_flag
         );
 
-        UDPListener listener(io_service_listener, message_queue);
+        UDPListener listener(io_service_listener, message_queue, emergency_stop_flag);
 
-        BufferMonitor monitor(message_queue, listener.get_socket(), sender_wait_flag);
+        BufferMonitor monitor(message_queue, listener.get_socket(), sender_wait_flag, emergency_stop_flag);
 
         try
         {
@@ -189,24 +210,16 @@ int main(int argc, char** argv)
             }
 
             thread_pool_.join_all();
+            std::cout << "[Scanner General] stopping without keyboard interrupt\n";
+            std::cout << "[Scanner General] Emergency status: " << emergency_stop_flag << "\n";
+            PARENT_CLEAN_UP()
+            std::cout << "[General] Clean up finished\n";
+
         }
         catch(const KeyboardInterruption& e)
         {
-            std::cout << "[General] Doing cleaning up\n";
-            
-            message_pack stop_signal;
-            stop_signal.query_type = -1;
-
-            message_queue->send(&stop_signal, sizeof(stop_signal), 2);
-            std::cout << "[General] Stopping sender\n";
-            sender.stop_send();
-            std::cout << "[General] Stopping monitor\n";
-            monitor.stop_monitor();
-            std::cout << "[General] Stopping io services\n";
-            io_service_listener.stop();
-            io_service_sender.stop();
-            std::cout << "[General] Stopping threads\n";
-            thread_pool_.join_all();
+            PARENT_CLEAN_UP()
+            thread_pool_.join_all(); 
             std::cout << "[General] Clean up finished\n";
         }
 

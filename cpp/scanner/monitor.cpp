@@ -3,7 +3,8 @@
 BufferMonitor::BufferMonitor(
     std::shared_ptr<msg_q> message_queue,
     boost::asio::ip::udp::socket& listening_socket,
-    std::atomic<bool>& sender_should_wait
+    std::atomic<bool>& sender_should_wait,
+    std::atomic<bool>& emergency_stop
 )
 : message_queue_(
     message_queue
@@ -20,12 +21,15 @@ BufferMonitor::BufferMonitor(
 , is_stop(
     false
 )
+, emergency_stop_(
+    emergency_stop
+)
 {
     boost::asio::socket_base::receive_buffer_size recv_size;
     listening_socket_.get_option(recv_size);
 
     size_t socket_buffer_size = recv_size.value();
-
+    std::cout << "[Monitor] emergency_stop_ address: " << &emergency_stop_ << "\n";
     std::cout << "[Monitor] Successfully retrieved the recv buffer size: " << socket_buffer_size << "\n";
     socket_buffer_size_ = socket_buffer_size;
 }
@@ -63,6 +67,7 @@ void BufferMonitor::start_monitor()
 {
     while (not is_stop)
     {
+        if (emergency_stop_){ return; }
         try
         {
             sender_should_wait_ = not check_buffer();

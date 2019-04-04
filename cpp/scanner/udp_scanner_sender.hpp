@@ -94,9 +94,11 @@ class UDPSender
         UDPSender(
             const std::string&,
             const std::uint32_t&,
+            const std::uint32_t&,
             const float&,
             boost::asio::io_service&,
             std::shared_ptr<boost::interprocess::message_queue>&,
+            std::atomic<bool>&,
             std::atomic<bool>&
         );
 
@@ -122,8 +124,11 @@ class UDPSender
 
         const uint32_t num_of_scanning_addr;
 
+        uint32_t start_line_;
+        uint32_t current_line_;
         uint32_t num_of_packets_sent;
         std::atomic<bool>& sender_wait_signal_;
+        std::atomic<bool>& emergency_stop_signal_;
 
         QueryFactory packet_factory_;
         TokenBucket bucket_;

@@ -8,13 +8,21 @@ constexpr uint32_t UDPSender::number_of_public_addresses;
 UDPSender::UDPSender(
     const std::string& input_file,
     const std::uint32_t& send_rate,
+    const std::uint32_t& start_line,
     const float& percent_of_scan_address,
     boost::asio::io_service& io_service,
     std::shared_ptr<boost::interprocess::message_queue>& message_queue,
-    std::atomic<bool>& wait_signal
+    std::atomic<bool>& wait_signal,
+    std::atomic<bool>& emergency_stop_signal
 )
 : file_input_(
     input_file
+)
+, start_line_(
+    start_line
+)
+, current_line_(
+    0
 )
 , socket_(
     io_service
@@ -27,6 +35,9 @@ UDPSender::UDPSender(
 )
 , sender_wait_signal_(
     wait_signal
+)
+, emergency_stop_signal_(
+    emergency_stop_signal
 )
 , queue_overflow_sleeper(
     io_service
@@ -46,7 +57,9 @@ UDPSender::UDPSender(
 
     socket_.open();
     socket_.non_blocking(true);
-
+    
+    std::cout << "[UDP Sender] emergency_stop_ address: " << &emergency_stop_signal_ << "\n";
+    std::cout << "[[UDP Sender] start from " << start_line_ << "\n";
     std::cout << "[UDP Sender] number of addresses covered in this scan: " << num_of_scanning_addr << "\n";
     std::cout << "[UDP Sender] message queue size: " << message_queue_->get_max_msg() << "\n";
 }
@@ -54,11 +67,33 @@ UDPSender::UDPSender(
 int UDPSender::start_send() noexcept
 {
     std::string target;
-    while((not is_stop) and std::getline(file_input_, target) and num_of_packets_sent <= num_of_scanning_addr)
+    bool start_from = false;
+    while(
+        (not is_stop) 
+        and 
+        (not emergency_stop_signal_)
+        and
+        std::getline(file_input_, target) 
+        and 
+        num_of_packets_sent <= num_of_scanning_addr
+    )
     {
+        if (current_line_ < start_line_)
+        {
+            current_line_++;
+            continue;
+        }
+
         try
         {
+            if (not start_from)
+            {
+                std::cout << "[UDP Scanner] Actually starts from " << target << "\n";
+                start_from = true;
+            }
+
             unsigned int address = std::stoul(target, nullptr, 10);
+
             if (not is_public_ip_address(address))
             {
                 continue;
@@ -110,6 +145,7 @@ int UDPSender::start_send() noexcept
                 end_point
             );
             num_of_packets_sent++;
+            current_line_++;
         }
         catch(const KeyboardInterruption& e)
         {
@@ -141,6 +177,8 @@ int UDPSender::stop_send() noexcept
 UDPSender::~UDPSender()
 {
     std::cout << "[UDP Scanner] Total Packets Sent: " << num_of_packets_sent << std::endl;
+    std::cout << "[UDP Scanner] Stops at line #: " << current_line_ << std::endl;
+    std::cout << "[UDP Scanner] Emergency status: " << bool(emergency_stop_signal_) << "\n";
 }
 
 bool is_public_ip_address(const unsigned int& int_address)
@@ -161,7 +199,7 @@ bool is_public_ip_address(const unsigned int& int_address)
         !((3405803776 <= int_address) &&  (int_address <= 3405804031)) &&
         !((3758096384 <= int_address) &&  (int_address <= 4026531839)) &&
         !((4026531840 <= int_address) &&  (int_address <= 4294967295)) &&
-        // !(int_address == 216816994) && // AT&T's
+        // !((216816960 <= int_address)  &&  (int_address <= 216817023)) && // AT&T's
         !(int_address == 4294967295);
 }
 
