@@ -21,9 +21,6 @@
 
 #include <memory>
 
-#define NAMETRICK_EXTERNAL_INCLUDE_ 1
-#include "../packet/name_util.hpp"
-
 #define TIMESTAMP std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 
 #define INITIALIZE_ON_SCANNER 1

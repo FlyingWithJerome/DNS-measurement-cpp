@@ -17,51 +17,23 @@
 #include <boost/interprocess/managed_shared_memory.hpp>
 
 #include "../log/log_service.hpp"
+#include "../system/system_utilities.hpp"
 #include "udp_scanner_listener.hpp"
 #include "udp_scanner_sender.hpp"
 #include "tcp_scanner.hpp"
 #include "message_queue_packet.hpp"
 #include "monitor.hpp"
-#include "keyboard_interruption.hpp"
 
 #define MESSAGE_QUEUE_SIZE 100000
 #define DEFAULT_SYS_BUFFER_SIZE 17000000
 
 typedef boost::interprocess::message_queue msg_q;
 
-void keyboard_interruption_handler_child(int);
-void keyboard_interruption_handler_parent(int);
+// void keyboard_interruption_handler_child(int);
+// void keyboard_interruption_handler_parent(int);
 
-int modify_sysctl_rmem(const uint32_t&);
+// int modify_sysctl_rmem(const uint32_t&);
 
-int modify_sysctl_rmem(const uint32_t& rmem_size)
-{
-    std::ofstream rmem_config("/proc/sys/net/core/rmem_max");
-    if (rmem_config.is_open())
-    {
-        rmem_config << std::to_string(rmem_size) << "\n";
-        return 0;
-    }
-    return -1;
-}
-
-void keyboard_interruption_handler_child(int signal)
-{
-    std::cout << "[Scanner General] Going to Exit (Child)...\n";
-    throw KeyboardInterruption("interrupt child");
-}
-
-void keyboard_interruption_handler_parent(int signal)
-{
-    std::cout << "[Scanner General] Going to Exit (Parent)...\n";
-    throw KeyboardInterruption("interrupt parent");
-}
-
-#define REGISTER_INTERRUPTION(identity) struct sigaction interruption_handler; \
-interruption_handler.sa_handler = keyboard_interruption_handler_##identity; \
-interruption_handler.sa_flags   = 0; \
-sigemptyset(&interruption_handler.sa_mask); \
-sigaction(SIGINT, &interruption_handler, nullptr);
 
 #define PARENT_CLEAN_UP() std::cout << "[General] Doing cleaning up\n"; \
 message_pack stop_signal; \

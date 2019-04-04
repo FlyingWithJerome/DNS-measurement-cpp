@@ -85,6 +85,7 @@ class UDPListener
         boost::asio::ip::udp::endpoint remote_endpoint_;
 
         std::shared_ptr<boost::interprocess::message_queue> pipe_to_tcp_;
+
         lru11::Cache<std::string, int, std::mutex> number_of_recv_responses_;
 };
 

@@ -5,7 +5,8 @@ int init_new_log_file(const char* file_name)
     boost::log::add_file_log(
         boost::log::keywords::file_name = file_name,
         boost::log::keywords::filter = a_channel == file_name,
-        boost::log::keywords::auto_flush = true
+        boost::log::keywords::auto_flush = true,
+        boost::log::keywords::open_mode = std::ios_base::out | std::ios_base::app
     );
 
     return 0;

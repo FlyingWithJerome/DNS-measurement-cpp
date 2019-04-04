@@ -6,6 +6,7 @@
 #include "udp_server.hpp"
 #include "tcp_server.hpp"
 #include "../log/log_service.hpp"
+#include "../system/system_utilities.hpp"
 
 int main()
 {
@@ -17,6 +18,8 @@ int main()
 
         // udp_thread.join();
         // tcp_thread.join();
+
+        modify_sysctl_rmem(17000000);
 
         init_log_service(INITIALIZE_ON_SERVER);
 

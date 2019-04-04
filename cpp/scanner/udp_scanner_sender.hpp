@@ -23,7 +23,7 @@
 #include <boost/interprocess/ipc/message_queue.hpp>
 
 #include "token_bucket.hpp"
-#include "keyboard_interruption.hpp"
+#include "../system/keyboard_interruption.hpp"
 #include "../packet/packet_factory.hpp"
 
 #define NANOSECONDS 1000000000L
