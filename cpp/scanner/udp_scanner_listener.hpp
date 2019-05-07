@@ -16,13 +16,14 @@
 #include "../log/log_service.hpp"
 #include "../packet/name_util.hpp"
 #include "../packet/packet_factory.hpp"
+#include "../packet/dns_process_util.hpp"
 #include "message_queue_packet.hpp"
-#include "lru.hpp"
 
 #define LRU_SIZE 10000
 #define MAX_ALLOW_NUM_PACK_RECV 100
+#define ENTRY_NOT_EXIST -1
 
-#define STOP_IN_EMERGENCY() if (emergency_stop_){ std::cout << "[UDP Listener] Emergency status: " << emergency_stop_ << "\n"; return;}
+#define STOP_IN_EMERGENCY() if (ddos_hold_on_){ std::cout << "[UDP Listener] Emergency status: " << ddos_hold_on_ << "\n"; return;}
 
 #define SEND_TO_TCP_SCANNER(q_name, q_type) message_pack outgoing; \
     strcpy(outgoing.ip_address, sender.address().to_string().c_str()); \
@@ -75,9 +76,8 @@ class UDPListener
         void handle_receive(const std::vector<uint8_t>&, const boost::asio::ip::udp::endpoint&);
         void handle_send(const boost::system::error_code&, std::size_t);
 
-        bool query_lru(const std::string&);
-
-        std::atomic<bool>& emergency_stop_;
+        std::atomic<bool>& ddos_hold_on_;
+        uint64_t time_last_recv;
 
         QueryFactory packet_factory_;
 
@@ -86,7 +86,7 @@ class UDPListener
 
         std::shared_ptr<boost::interprocess::message_queue> pipe_to_tcp_;
 
-        lru11::Cache<std::string, int, std::mutex> number_of_recv_responses_;
+        lru_cache number_of_recv_responses_;
 };
 
 #endif

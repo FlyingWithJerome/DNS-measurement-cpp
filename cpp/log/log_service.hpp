@@ -26,9 +26,10 @@
 #define INITIALIZE_ON_SCANNER 1
 #define INITIALIZE_ON_SERVER  0
 
-#define UDP_SCANNER_NORMAL_LOG_NAME       "udp_scanner_normal.log"
-#define UDP_SCANNER_TRUNCATION_LOG_NAME   "udp_scanner_truncate.log"
-#define UDP_SCANNER_BAD_RESPONSE_LOG_NAME "udp_scanner_bad_response.log"
+#define UDP_SCANNER_NORMAL_LOG_NAME          "udp_scanner_normal.log"
+#define UDP_SCANNER_TRUNCATION_LOG_NAME      "udp_scanner_truncate.log"
+#define UDP_SCANNER_BAD_RESPONSE_LOG_NAME    "udp_scanner_bad_response.log"
+#define UDP_SCANNER_REPEAT_RESPONSE_LOG_NAME "udp_scanner_repeat_response.log"
 
 #define TCP_SCANNER_NORMAL_LOG_NAME       "tcp_scanner_normal.log"
 #define TCP_SCANNER_BAD_RESPONSE_LOG_NAME "tcp_scanner_malformed_packet.log"
@@ -130,6 +131,12 @@ BOOST_LOG(lg) \
 << ans_num                  << "," \
 << q_type                   << "," \
 << tc                       << "," \
+<< TIMESTAMP;}
+
+#define UDP_SCANNER_REPEAT_RESPONSE_LOG(ep, ques) {logger_type lg(boost::log::keywords::channel=UDP_SCANNER_REPEAT_RESPONSE_LOG_NAME); \
+BOOST_LOG(lg) \
+<< ep.address().to_string() << "," \
+<< ques                     << "," \
 << TIMESTAMP;}
 
 #define UDP_SCANNER_BAD_RESPONSE_LOG(ep, qid, rcode, q_type, jumbo, ancount, msg) {logger_type lg(boost::log::keywords::channel=UDP_SCANNER_BAD_RESPONSE_LOG_NAME); \

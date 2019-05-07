@@ -13,7 +13,7 @@ UDPSender::UDPSender(
     boost::asio::io_service& io_service,
     std::shared_ptr<boost::interprocess::message_queue>& message_queue,
     std::atomic<bool>& wait_signal,
-    std::atomic<bool>& emergency_stop_signal
+    std::atomic<bool>& ddos_hold_on_signal
 )
 : file_input_(
     input_file
@@ -36,8 +36,8 @@ UDPSender::UDPSender(
 , sender_wait_signal_(
     wait_signal
 )
-, emergency_stop_signal_(
-    emergency_stop_signal
+, ddos_hold_on_signal_(
+    ddos_hold_on_signal
 )
 , queue_overflow_sleeper(
     io_service
@@ -58,7 +58,7 @@ UDPSender::UDPSender(
     socket_.open();
     socket_.non_blocking(true);
     
-    std::cout << "[UDP Sender] emergency_stop_ address: " << &emergency_stop_signal_ << "\n";
+    std::cout << "[UDP Sender] ddos_hold_on_ address: " << &ddos_hold_on_signal_ << "\n";
     std::cout << "[[UDP Sender] start from " << start_line_ << "\n";
     std::cout << "[UDP Sender] number of addresses covered in this scan: " << num_of_scanning_addr << "\n";
     std::cout << "[UDP Sender] message queue size: " << message_queue_->get_max_msg() << "\n";
@@ -70,8 +70,6 @@ int UDPSender::start_send() noexcept
     bool start_from = false;
     while(
         (not is_stop) 
-        and 
-        (not emergency_stop_signal_)
         and
         std::getline(file_input_, target) 
         and 
@@ -97,6 +95,16 @@ int UDPSender::start_send() noexcept
             if (not is_public_ip_address(address))
             {
                 continue;
+            }
+
+            while (ddos_hold_on_signal_ or sender_wait_signal_)
+            {
+                boost::thread::id thread_id = boost::this_thread::get_id();
+                std::cout << "[UDP Sender] going to sleep for " << sleep_time << "seconds (id:" << thread_id << ")\n";
+
+                boost::this_thread::sleep_for(
+                    boost::chrono::seconds(10)
+                );
             }
 
             std::string hex_address;
@@ -130,15 +138,15 @@ int UDPSender::start_send() noexcept
                 nanosleep(&flow_control_sleep_, &flow_control_sleep_idle_);
             }
 
-            if (sender_wait_signal_)
-            {
-                boost::thread::id thread_id = boost::this_thread::get_id();
-                std::cout << "[UDP Sender] going to sleep for " << sleep_time << "seconds (id:" << thread_id << ")\n";
+            // if (sender_wait_signal_)
+            // {
+            //     boost::thread::id thread_id = boost::this_thread::get_id();
+            //     std::cout << "[UDP Sender] going to sleep for " << sleep_time << "seconds (id:" << thread_id << ")\n";
 
-                queue_overflow_sleeper.expires_from_now(boost::posix_time::seconds(sleep_time));
-                queue_overflow_sleeper.wait();
-                std::cout << "[UDP Sender] sender waked up (id:" << thread_id << ")\n";
-            }
+            //     queue_overflow_sleeper.expires_from_now(boost::posix_time::seconds(sleep_time));
+            //     queue_overflow_sleeper.wait();
+            //     std::cout << "[UDP Sender] sender waked up (id:" << thread_id << ")\n";
+            // }
             
             socket_.send_to(
                 boost::asio::buffer(full_packet),
@@ -165,7 +173,7 @@ void UDPSender::handle_send(const boost::system::error_code& error_code, std::si
 {
     if (error_code)
     {
-        std::cout << error_code.message() << std::endl;
+        // std::cout << error_code.message() << std::endl;
     }
 }
 
@@ -178,7 +186,7 @@ UDPSender::~UDPSender()
 {
     std::cout << "[UDP Scanner] Total Packets Sent: " << num_of_packets_sent << std::endl;
     std::cout << "[UDP Scanner] Stops at line #: " << current_line_ << std::endl;
-    std::cout << "[UDP Scanner] Emergency status: " << bool(emergency_stop_signal_) << "\n";
+    std::cout << "[UDP Scanner] Emergency status: " << bool(ddos_hold_on_signal_) << "\n";
 }
 
 bool is_public_ip_address(const unsigned int& int_address)
@@ -200,6 +208,9 @@ bool is_public_ip_address(const unsigned int& int_address)
         !((3758096384 <= int_address) &&  (int_address <= 4026531839)) &&
         !((4026531840 <= int_address) &&  (int_address <= 4294967295)) &&
         !((216816960 <= int_address)  &&  (int_address <= 216817023)) && // AT&T's
+        !((1085941248 <= int_address) &&  (int_address <= 1085941503)) && // mieweb.com
+        !(int_address == 2328435481) && // inetworker.at 
+        !(int_address == 2945409554) && // malaysia telecom
         !(int_address == 4294967295);
 }
 

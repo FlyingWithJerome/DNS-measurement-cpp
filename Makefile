@@ -17,7 +17,7 @@ ALL_OPT = $(CPP_OPT) $(OPTIMIZATION) $(BOOST_FLAG) $(BOOST_LOG) $(TINS_FLAG) $(P
 TARGET_SERVER = server_main
 TARGET_SCANNER = scanner_main
 
-$(TARGET_SERVER): $(TARGET_SERVER).o log_service.o constants.o name_util.o response_maker.o tcp_server.o udp_server.o edns.o packet_factory.o
+$(TARGET_SERVER): $(TARGET_SERVER).o log_service.o constants.o name_util.o response_maker.o tcp_server.o udp_server.o edns.o packet_factory.o dns_util.o
 	g++ *.o $(ALL_OPT) -o $(TARGET_SERVER) && mv *.o build
 
 $(TARGET_SERVER).o : cpp/server/server_main.cpp
@@ -44,6 +44,9 @@ response_maker.o : cpp/packet/response_maker.hpp
 edns.o : cpp/packet/edns.cpp
 	g++ -c cpp/packet/edns.cpp $(CPP_OPT) $(TINS_FLAG) 
 
+dns_util.o : cpp/packet/dns_process_util.cpp
+	g++ -c cpp/packet/dns_process_util.cpp $(CPP_OPT) $(TINS_FLAG) 
+
 server: $(TARGET_SERVER) ;
 
 udp_scanner_sender.o : cpp/scanner/udp_scanner_sender.cpp
@@ -64,7 +67,7 @@ monitor.o : cpp/scanner/monitor.cpp
 packet_factory.o: cpp/packet/packet_factory.cpp
 	g++ -c cpp/packet/packet_factory.cpp $(CPP_OPT) $(TINS_FLAG)
 
-udp_scanner_main: udp_scanner_sender.o udp_scanner_listener.o udp_scanner.o name_util.o log_service.o tcp_scanner.o monitor.o packet_factory.o
+udp_scanner_main: udp_scanner_sender.o udp_scanner_listener.o udp_scanner.o name_util.o log_service.o tcp_scanner.o monitor.o packet_factory.o dns_util.o
 	g++ udp_scanner_sender.o \
 	    udp_scanner_listener.o \
 		udp_scanner.o \
@@ -72,6 +75,7 @@ udp_scanner_main: udp_scanner_sender.o udp_scanner_listener.o udp_scanner.o name
 		name_util.o \
 		tcp_scanner.o \
 		monitor.o \
+		dns_process_util.o \
 		packet_factory.o \
 		$(ALL_OPT) -o \
 		udp_scanner

@@ -37,8 +37,7 @@ class BufferMonitor
         std::uint32_t socket_buffer_size_;
         std::size_t   msg_queue_size_;
         std::atomic<bool>& sender_should_wait_;
-        std::atomic<bool>& emergency_stop_;
-
+        
         bool is_stop;
 };  
 

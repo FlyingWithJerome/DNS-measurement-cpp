@@ -3,3 +3,4 @@ mq_*
 *.txt
 *.gch
 *.o
+rc5_perm.cpp

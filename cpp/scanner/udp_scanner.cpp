@@ -29,12 +29,6 @@
 
 typedef boost::interprocess::message_queue msg_q;
 
-// void keyboard_interruption_handler_child(int);
-// void keyboard_interruption_handler_parent(int);
-
-// int modify_sysctl_rmem(const uint32_t&);
-
-
 #define PARENT_CLEAN_UP() std::cout << "[General] Doing cleaning up\n"; \
 message_pack stop_signal; \
 stop_signal.query_type = -1; \
@@ -139,7 +133,7 @@ int main(int argc, char** argv)
         boost::thread_group thread_pool_;
 
         std::atomic<bool> sender_wait_flag{false};
-        std::atomic<bool> emergency_stop_flag{false};
+        std::atomic<bool> ddos_hold_on_flag{false};
 
         boost::asio::io_service io_service_listener;
         boost::asio::io_service io_service_sender;
@@ -152,12 +146,12 @@ int main(int argc, char** argv)
             io_service_sender, 
             message_queue, 
             sender_wait_flag,
-            emergency_stop_flag
+            ddos_hold_on_flag
         );
 
-        UDPListener listener(io_service_listener, message_queue, emergency_stop_flag);
+        UDPListener listener(io_service_listener, message_queue, ddos_hold_on_flag);
 
-        BufferMonitor monitor(message_queue, listener.get_socket(), sender_wait_flag, emergency_stop_flag);
+        BufferMonitor monitor(message_queue, listener.get_socket(), sender_wait_flag, ddos_hold_on_flag);
 
         try
         {
@@ -183,7 +177,8 @@ int main(int argc, char** argv)
 
             thread_pool_.join_all();
             std::cout << "[Scanner General] stopping without keyboard interrupt\n";
-            std::cout << "[Scanner General] Emergency status: " << emergency_stop_flag << "\n";
+            std::cout << "[Scanner General] Emergency status: " << ddos_hold_on_flag << "\n";
+            
             PARENT_CLEAN_UP()
             std::cout << "[General] Clean up finished\n";
 

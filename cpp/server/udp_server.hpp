@@ -3,9 +3,14 @@
 
 #define FROM_UDP_SERVER
 
+#include <mutex>
+
 #include "server_common.hpp"
+#include "../log/log_service.hpp"
 #include "../packet/packet_factory.hpp"
 #include "../packet/edns.hpp"
+#include "../system/keyboard_interruption.hpp"
+#include "../packet/dns_process_util.hpp"
 
 class UDPServer
 {
@@ -19,6 +24,7 @@ class UDPServer
         // static constexpr char sender_over_tcp_log_name[] = "udp_server_sender_over_tcp.log";
 
         static constexpr uint32_t rcv_buf_size = 16000000;
+        static constexpr uint32_t lru_size = 10000;
     
     private:
         void start_receive();
@@ -31,5 +37,6 @@ class UDPServer
         boost::asio::ip::udp::socket   main_socket_;
         boost::asio::ip::udp::endpoint remote_endpoint_;
 
+        lru_cache response_count_cache;
 };
 #endif

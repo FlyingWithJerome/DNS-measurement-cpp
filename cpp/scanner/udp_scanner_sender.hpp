@@ -128,7 +128,7 @@ class UDPSender
         uint32_t current_line_;
         uint32_t num_of_packets_sent;
         std::atomic<bool>& sender_wait_signal_;
-        std::atomic<bool>& emergency_stop_signal_;
+        std::atomic<bool>& ddos_hold_on_signal_;
 
         QueryFactory packet_factory_;
         TokenBucket bucket_;

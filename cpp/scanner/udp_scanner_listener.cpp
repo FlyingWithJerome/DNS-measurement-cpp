@@ -8,7 +8,7 @@ constexpr uint32_t UDPListener::rcv_buf_size;
 UDPListener::UDPListener(
     boost::asio::io_service& io_service,
     std::shared_ptr<boost::interprocess::message_queue>& message_queue_,
-    std::atomic<bool>& emergency_stop
+    std::atomic<bool>& ddos_hold_on
 )
 : main_socket_(
     io_service,
@@ -23,11 +23,11 @@ UDPListener::UDPListener(
 , number_of_recv_responses_(
     LRU_SIZE
 )
-, emergency_stop_(
-    emergency_stop
+, ddos_hold_on_(
+    ddos_hold_on
 )
 {
-    std::cout << "[UDP Listener] emergency_stop_ address: " << &emergency_stop_ << "\n";
+    std::cout << "[UDP Listener] ddos_hold_on_ address: " << &ddos_hold_on_ << "\n";
     boost::asio::socket_base::receive_buffer_size option(rcv_buf_size);
     main_socket_.set_option(option);
 
@@ -44,8 +44,6 @@ UDPListener::UDPListener(
 
 void UDPListener::start_receive()
 {
-    STOP_IN_EMERGENCY()
-
     main_socket_.async_receive_from(
         boost::asio::null_buffers(),
         remote_endpoint_,
@@ -64,17 +62,15 @@ boost::asio::ip::udp::socket& UDPListener::get_socket()
 
 void UDPListener::reactor_read(const boost::system::error_code& error_code)
 {
-    STOP_IN_EMERGENCY()
-
     if(error_code)
     {
-        std::cout << "[UDP Listener] err msg " << error_code.message() << std::endl;
+        // std::cout << "[UDP Listener] err msg " << error_code.message() << std::endl;
     }
     else
     {
         boost::asio::ip::udp::endpoint sender_info;
-        
-        std::size_t available_packet_size = std::min((int)(main_socket_.available()), 1000);
+        boost::system::error_code ec;
+        std::size_t available_packet_size = main_socket_.available(ec);
 
         try
         {
@@ -108,39 +104,41 @@ void UDPListener::handle_receive(
     const boost::asio::ip::udp::endpoint& sender
 )
 {
-    STOP_IN_EMERGENCY()
-
     Tins::DNS incoming_response;
     int number_of_answers;
-    int num_answer_in_array;
-    int num_answer_declared;
 
-    const std::string& remote_addr = sender.address().to_string();
-
-    if (not query_lru(remote_addr))
-    {
-        std::cout 
-        << "[UDP Listener] remote address: "
-        << remote_addr
-        << " sends too many packets, graciously stopping...\n";
-        
-        emergency_stop_ = true;
-        return;
-    }
+    bool is_valid_dns_packet;
+    std::pair<std::string, int> name_type_pair;
 
     try
     {
         incoming_response = Tins::DNS(incoming_packet.data(), incoming_packet.size());
+
+        name_type_pair = extract_name_type_pair(incoming_response);
+        number_of_answers = incoming_response.answers().size();
+
+        if (name_type_pair.second != INVALID_QUERY_TYPE)
+        {
+            int number_of_entries = query_lru(number_of_recv_responses_, name_type_pair.first);
+            if (number_of_entries != ENTRY_NOT_EXIST)
+            {
+                UDP_SCANNER_REPEAT_RESPONSE_LOG(sender, name_type_pair.first)
+
+                // ddos_hold_on_ = number_of_entries >= MAX_ALLOW_NUM_PACK_RECV;
+                goto End;
+            }
+            if (ddos_hold_on_)
+            {
+                // boost::system::error_code ec;
+                // ddos_hold_on_ = main_socket_.available(ec) < 1000;
+            }
+        }
     }
     catch(...)
     {
         std::cout << "[UDP Listener] received a malformed packet\n";
         goto End;
-    }
-
-    num_answer_declared = incoming_response.answers_count();
-    num_answer_in_array = incoming_response.answers().size();
-    number_of_answers = std::min(num_answer_declared, num_answer_in_array);
+    }  
 
     std::cout 
     << "[UDP Listener] Address: " 
@@ -154,17 +152,14 @@ void UDPListener::handle_receive(
     if (incoming_response.rcode() == 0)
     { // is a legal response
 
-        if (number_of_answers > 0)
+        if (name_type_pair.second != INVALID_QUERY_TYPE)
         {
-            const int type_of_query_        = incoming_response.answers()[0].query_type();
-            const std::string question_name = incoming_response.answers()[0].dname();
-
+            const std::string& question_name = name_type_pair.first;
+            const int& type_of_query_ = name_type_pair.second;
             const NameUtilities::QueryProperty query_property(question_name);
             
             if(query_property.jumbo_type == NameUtilities::JumboType::no_jumbo) // not a jumbo query, will start a jumbo query
-            {
-                std::cout << "[UDP Listener] Name: " << question_name << std::endl;
-                
+            {                
                 const std::string question_name_jumbo  = std::string("jumbo1-") + query_property.name;
                 const std::string question_name_ac1an0 = std::string("ac1an0-") + question_name_jumbo;
                 const std::string question_name_broken = std::string("jumbo2-") + query_property.name;
@@ -196,60 +191,18 @@ void UDPListener::handle_receive(
                 UDP_SCANNER_TRUNCATE_LOG(sender, query_property.question_id, number_of_answers, type_of_query_, "tc_fail")
             }
         }
-        else // answer count is 0
+        else // query type is invalid (no queries or answers included)
         {
-            if (incoming_response.queries().size() > 0)
-            {
-                // extract the query name from questions to get its query property
-                const int type_of_query_        = incoming_response.queries()[0].query_type();
-                const std::string question_name = incoming_response.queries()[0].dname();
-                const NameUtilities::QueryProperty query_property(question_name);
-
-                if (incoming_response.truncated()) // 0 answer but is truncated (as our expectation)
-                {
-                    // send to tcp scanner
-                    SEND_TO_TCP_SCANNER(question_name, type_of_query_)
-                    UDP_SCANNER_TRUNCATE_LOG(sender, query_property.question_id, 0, type_of_query_, "tc_ok")
-                }
-                else // 0 answer and is not truncated
-                {
-                    if (query_property.jumbo_type == NameUtilities::JumboType::no_jumbo) // 0 answer and is not truncated and does not need to be truncated
-                    { // 0 answer and is not truncated and we are NOT expecting truncation
-                        UDP_SCANNER_BAD_RESPONSE_LOG(
-                            sender, 
-                            query_property.question_id, 
-                            incoming_response.rcode(),
-                            type_of_query_,
-                            (int)query_property.jumbo_type,
-                            number_of_answers,
-                            "no_(an)records_included"
-                        )
-                    }
-                    else // 0 answer and is not truncated and we are expecting truncation
-                    {
-                        UDP_SCANNER_TRUNCATE_LOG(
-                            sender, 
-                            query_property.question_id, 
-                            0, 
-                            type_of_query_, 
-                            "tc_fail"
-                        )
-                    }   
-                }
-            }
-            else // 0 answer and is not truncated and has no questions included (no way to tell its query property)
-            {
-                UDP_SCANNER_BAD_RESPONSE_LOG(
-                    sender, 
-                    INVALID_QUESTION_ID, 
-                    incoming_response.rcode(), 
-                    INVALID_QUERY_TYPE,
-                    INVALID_JUMBO_TYPE, 
-                    0, 
-                    "no_(qr&an)records_included"
-                )
-            } 
-        } // answer count is 0 END
+            UDP_SCANNER_BAD_RESPONSE_LOG(
+                sender, 
+                INVALID_QUESTION_ID, 
+                incoming_response.rcode(), 
+                INVALID_QUERY_TYPE,
+                INVALID_JUMBO_TYPE, 
+                0, 
+                "no_(qr&an)records_included"
+            )
+        }
     }
     else // rcode is not NOERROR
     {
@@ -270,32 +223,8 @@ void UDPListener::handle_receive(
 
 void UDPListener::handle_send(const boost::system::error_code& error_code, std::size_t)
 {
-    if(error_code)
-        std::cout << error_code.message() << std::endl;
-}
-
-bool UDPListener::query_lru(const std::string& ip_address)
-{
-    int number_of_packet_recv = 0;
-    if (not number_of_recv_responses_.tryGet(ip_address, number_of_packet_recv))
-    {
-        number_of_recv_responses_.insert(ip_address, 1);
-        return true;
-    }
-    else
-    {
-        if (number_of_packet_recv >= MAX_ALLOW_NUM_PACK_RECV)
-        {
-            return false;
-        }
-        else
-        {
-            number_of_recv_responses_.insert(ip_address, number_of_packet_recv+1);
-            return true;
-        }
-    }
-    
-
+    // if(error_code)
+        // std::cout << error_code.message() << std::endl;
 }
 
 UDPListener::~UDPListener()

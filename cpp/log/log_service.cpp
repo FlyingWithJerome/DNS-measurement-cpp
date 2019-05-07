@@ -22,6 +22,7 @@ int init_log_service(const int& initialize_mode)
             UDP_SCANNER_NORMAL_LOG_NAME,
             UDP_SCANNER_TRUNCATION_LOG_NAME,
             UDP_SCANNER_BAD_RESPONSE_LOG_NAME,
+            UDP_SCANNER_REPEAT_RESPONSE_LOG_NAME,
             TCP_SCANNER_NORMAL_LOG_NAME,
             TCP_SCANNER_BAD_RESPONSE_LOG_NAME
         };
