@@ -4,3 +4,4 @@ mq_*
 *.gch
 *.o
 rc5_perm.cpp
+scan history
