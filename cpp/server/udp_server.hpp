@@ -17,12 +17,6 @@ class UDPServer
     public:
         UDPServer(boost::asio::io_service&);
 
-        // static constexpr char udp_log_name_[]            = "udp_server_normal_response.log";
-        // static constexpr char udp_tc_log_name_[]         = "udp_server_truncated_response.log";
-        // static constexpr char udp_edns_log_name_[]       = "udp_server_edns_record.log";
-        // static constexpr char udp_malform_log_name[]     = "udp_server_malform_record.log";
-        // static constexpr char sender_over_tcp_log_name[] = "udp_server_sender_over_tcp.log";
-
         static constexpr uint32_t rcv_buf_size = 16000000;
         static constexpr uint32_t lru_size = 10000;
     
