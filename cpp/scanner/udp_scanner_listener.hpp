@@ -23,8 +23,6 @@
 #define MAX_ALLOW_NUM_PACK_RECV 100
 #define ENTRY_NOT_EXIST -1
 
-#define STOP_IN_EMERGENCY() if (ddos_hold_on_){ std::cout << "[UDP Listener] Emergency status: " << ddos_hold_on_ << "\n"; return;}
-
 #define SEND_TO_TCP_SCANNER(q_name, q_type) message_pack outgoing; \
     strcpy(outgoing.ip_address, sender.address().to_string().c_str()); \
     strcpy(outgoing.question,   (q_name).c_str()); \
@@ -76,7 +74,6 @@ class UDPListener
         void handle_receive(const std::vector<uint8_t>&, const boost::asio::ip::udp::endpoint&);
         void handle_send(const boost::system::error_code&, std::size_t);
 
-        std::atomic<bool>& ddos_hold_on_;
         uint64_t time_last_recv;
 
         QueryFactory packet_factory_;

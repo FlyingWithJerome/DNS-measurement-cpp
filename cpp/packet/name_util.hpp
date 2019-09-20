@@ -5,7 +5,9 @@
 
 #include <algorithm>
 #include <stdlib.h>
+#include <stdexcept>
 #include <string>
+#include <map>
 #include <vector>
 
 #include <boost/algorithm/string.hpp>
@@ -32,9 +34,24 @@ namespace NameUtilities
     enum JumboType
     {
         no_jumbo,
+        jumbo_no_answer,
         jumbo_one_answer,
         jumbo_broken_answer
     };
+    
+    const std::map<uint8_t, JumboType> int_to_jumbo = {
+        {1, jumbo_no_answer},
+        {2, jumbo_one_answer},
+        {3, jumbo_broken_answer}
+    };
+
+    const std::map<JumboType, uint8_t> jumbo_to_int = {
+        {jumbo_no_answer,     1},
+        {jumbo_one_answer,    2},
+        {jumbo_broken_answer, 3}
+    };
+
+
     
     struct QueryProperty
     {
@@ -60,6 +77,8 @@ namespace NameUtilities
     JumboType get_jumbo_type(const std::string&) noexcept;
     /* get the expect answer count and number of answers */
     void get_answer_config(const std::string&, uint8_t& expect_ac, uint8_t& expect_num_ans) noexcept;
+
+    void make_dns_style_string(std::string&);
 };
 
 #endif

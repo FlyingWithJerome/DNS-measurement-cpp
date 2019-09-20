@@ -5,6 +5,8 @@
 #include <vector>
 #include <iostream>
 #include <fstream>
+#include <map>
+#include <utility>
 #include <functional>
 #include <tins/dns.h>
 #include <ctype.h>
@@ -15,6 +17,9 @@
 #define MAX_LABEL_SIZE                63
 #define MAX_HOSTNAME_WITHOUT_DOT_SIZE 248
 #define NUMBER_OF_CALLSIGNS           26
+
+#define SPF_TYPE 99
+#define SPF_RESPONSE "v=spf1 ip4:192.5.110.81 ip4:129.22.150.52 ~all"
 
 #define INT_TO_HEX(input_int, output_str) char out[20]; \
 sprintf(out, "0x%x", input_int); \
@@ -36,6 +41,11 @@ enum PacketTypes {
     TCP_RESPONSE,
 };
 
+enum ProtocolTypes {
+    PROTO_TCP,
+    PROTO_UDP
+};
+
 using QueryType = Tins::DNS::QueryType;
 
 typedef struct{
@@ -46,6 +56,123 @@ typedef struct{
     std::string          q_name;
     
 } packet_configuration;
+
+typedef void (*handler)(
+    Tins::DNS&, 
+    const std::vector<std::string>&,
+    const Tins::DNS::QueryClass&,
+    const Tins::DNS::QueryType&,
+    const std::string&
+);
+
+void udp_a_handler(
+    Tins::DNS&, 
+    const std::vector<std::string>&,
+    const Tins::DNS::QueryClass&,
+    const Tins::DNS::QueryType&,
+    const std::string&
+);
+
+void udp_ns_handler(
+    Tins::DNS&, 
+    const std::vector<std::string>&,
+    const Tins::DNS::QueryClass&,
+    const Tins::DNS::QueryType&,
+    const std::string&
+);
+
+void udp_mx_handler(
+    Tins::DNS&, 
+    const std::vector<std::string>&,
+    const Tins::DNS::QueryClass&,
+    const Tins::DNS::QueryType&,
+    const std::string&
+);
+
+void udp_txt_handler(
+    Tins::DNS&, 
+    const std::vector<std::string>&,
+    const Tins::DNS::QueryClass&,
+    const Tins::DNS::QueryType&,
+    const std::string&
+);
+
+void tcp_a_handler(
+    Tins::DNS&, 
+    const std::vector<std::string>&,
+    const Tins::DNS::QueryClass&,
+    const Tins::DNS::QueryType&,
+    const std::string&
+);
+
+void tcp_ns_handler(
+    Tins::DNS&, 
+    const std::vector<std::string>&,
+    const Tins::DNS::QueryClass&,
+    const Tins::DNS::QueryType&,
+    const std::string&
+);
+
+void tcp_mx_handler(
+    Tins::DNS&, 
+    const std::vector<std::string>&,
+    const Tins::DNS::QueryClass&,
+    const Tins::DNS::QueryType&,
+    const std::string&
+);
+
+void tcp_txt_handler(
+    Tins::DNS&, 
+    const std::vector<std::string>&,
+    const Tins::DNS::QueryClass&,
+    const Tins::DNS::QueryType&,
+    const std::string&
+);
+
+const std::map<std::pair<ProtocolTypes, QueryType>, handler> query_handler = {
+    {std::make_pair(ProtocolTypes::PROTO_UDP, QueryType::A),   udp_a_handler},
+    {std::make_pair(ProtocolTypes::PROTO_TCP, QueryType::A),   tcp_a_handler},
+    {std::make_pair(ProtocolTypes::PROTO_UDP, QueryType::NS),  udp_ns_handler},
+    {std::make_pair(ProtocolTypes::PROTO_TCP, QueryType::NS),  tcp_ns_handler},
+    {std::make_pair(ProtocolTypes::PROTO_UDP, QueryType::MX),  udp_mx_handler},
+    {std::make_pair(ProtocolTypes::PROTO_TCP, QueryType::MX),  tcp_mx_handler},
+    {std::make_pair(ProtocolTypes::PROTO_UDP, QueryType::TXT), udp_txt_handler},
+    {std::make_pair(ProtocolTypes::PROTO_TCP, QueryType::TXT), tcp_txt_handler}
+};
+
+static constexpr char short_msg[] = 
+"an Internet measurement on DNS in IPv4 space, "
+"carried out by Jerome Mao and Professor Michael Rabinovich "
+"from Case Western Reserve University (jxm959*at*case.edu).";
+
+static constexpr const char* ns_server_names[NUMBER_OF_CALLSIGNS] = {
+    "Alfa",
+    "Bravo",
+    "Charlie",
+    "Delta",
+    "Echo",
+    "Foxtrot",
+    "Golf",
+    "Hotel",
+    "India",
+    "Juliett",
+    "Kilo",
+    "Lima",
+    "Mike",
+    "November",
+    "Oscar",
+    "Papa",
+    "Quebec",
+    "Romeo",
+    "Sierra",
+    "Tango",
+    "Uniform",
+    "Victor",
+    "Whiskey",
+    "Xray",
+    "Yankee",
+    "Zulu"
+};
 
 QueryType string_to_query_type(const std::string&) noexcept;
 
@@ -95,10 +222,6 @@ class ResponseFactory
 
         static constexpr size_t udp_header_size    = 8;
         static constexpr size_t tcp_dns_size_shift = 2;
-        static constexpr char short_msg[] = 
-        "an Internet measurement on DNS in IPv4 space, "
-        "carried out by Jerome Mao and Professor Michael Rabinovich "
-        "from Case Western Reserve University (jxm959*at*case.edu).";
 
         template <typename input_iter>
         static std::string form_txt_string(
@@ -151,35 +274,6 @@ class ResponseFactory
 
         std::string txt_answer;
         std::string short_txt_answer;
-
-        const char* ns_server_names[NUMBER_OF_CALLSIGNS] = {
-            "Alfa",
-            "Bravo",
-            "Charlie",
-            "Delta",
-            "Echo",
-            "Foxtrot",
-            "Golf",
-            "Hotel",
-            "India",
-            "Juliett",
-            "Kilo",
-            "Lima",
-            "Mike",
-            "November",
-            "Oscar",
-            "Papa",
-            "Quebec",
-            "Romeo",
-            "Sierra",
-            "Tango",
-            "Uniform",
-            "Victor",
-            "Whiskey",
-            "Xray",
-            "Yankee",
-            "Zulu"
-        };
 };
 
 #endif

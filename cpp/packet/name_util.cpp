@@ -12,6 +12,11 @@ bool NameUtilities::check_authoritative(const std::string& question)
     );
 }
 
+void NameUtilities::make_dns_style_string(std::string& original_string)
+{
+    original_string.insert(original_string.begin(), (char)original_string.size());
+}
+
 uint32_t NameUtilities::get_question_id(const std::string& question)
 {
     std::vector<std::string> after_split;
@@ -38,11 +43,14 @@ NameUtilities::JumboType NameUtilities::get_jumbo_type(const std::string& questi
     switch(key_character)
     {
         case '1':
-            return NameUtilities::JumboType(jumbo_one_answer);
+            return NameUtilities::JumboType(jumbo_no_answer);
 
         case '2':
+            return NameUtilities::JumboType(jumbo_one_answer);
+
+        case '3':
             return NameUtilities::JumboType(jumbo_broken_answer);
-        
+
         default:
             return NameUtilities::JumboType(no_jumbo);
     }
@@ -97,7 +105,8 @@ NameUtilities::QueryProperty::QueryProperty(const std::string& raw_name)
         switch (section[0])
         {
             case 't':
-                normal_query_over_tcp = true;
+                if (section.size() == 1)
+                    normal_query_over_tcp = true;
                 break;
             
             case 'j':
@@ -111,7 +120,8 @@ NameUtilities::QueryProperty::QueryProperty(const std::string& raw_name)
                 break;
 
             case '0':
-                question_id = (uint32_t)std::strtoul(section.c_str()+2, nullptr, 16);
+                if (section[1] == 'x')
+                    question_id = (uint32_t)std::strtoul(section.c_str()+2, nullptr, 16);
                 break;
 
             default:
@@ -120,6 +130,6 @@ NameUtilities::QueryProperty::QueryProperty(const std::string& raw_name)
     }
 
     is_authoritative = NameUtilities::check_authoritative(name);
-    will_truncate    = (jumbo_type != NameUtilities::JumboType::no_jumbo and TRUNCATION_TRICK);
+    will_truncate    = jumbo_type != NameUtilities::JumboType::no_jumbo;
 }
 

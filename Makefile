@@ -17,34 +17,34 @@ ALL_OPT = $(CPP_OPT) $(OPTIMIZATION) $(BOOST_FLAG) $(BOOST_LOG) $(TINS_FLAG) $(P
 TARGET_SERVER = server_main
 TARGET_SCANNER = scanner_main
 
-$(TARGET_SERVER): $(TARGET_SERVER).o log_service.o constants.o name_util.o response_maker.o tcp_server.o udp_server.o edns.o packet_factory.o dns_util.o
+$(TARGET_SERVER): server_main log_service constants name_util response_maker tcp_server udp_server edns packet_factory dns_util
 	g++ *.o $(ALL_OPT) -o $(TARGET_SERVER) && mv *.o build
 
-$(TARGET_SERVER).o : cpp/server/server_main.cpp
+server_main : cpp/server/server_main.cpp
 	g++ -c cpp/server/server_main.cpp $(ALL_OPT)
 
-tcp_server.o : cpp/server/tcp_server.cpp cpp/server/tcp_connection.cpp 
+tcp_server : cpp/server/tcp_server.cpp cpp/server/tcp_connection.cpp 
 	g++ -c cpp/server/tcp_server.cpp cpp/server/tcp_connection.cpp $(ALL_OPT)
 
-udp_server.o : cpp/server/udp_server.cpp
+udp_server : cpp/server/udp_server.cpp
 	g++ -c cpp/server/udp_server.cpp $(ALL_OPT)
 
-log_service.o : cpp/log/log_service.cpp
+log_service : cpp/log/log_service.cpp
 	g++ -c cpp/log/log_service.cpp $(ALL_OPT)
 
-constants.o : cpp/constants.hpp
+constants : cpp/constants.hpp
 	g++ -c cpp/constants.hpp $(ALL_OPT)
 
-name_util.o : cpp/packet/name_util.cpp
+name_util : cpp/packet/name_util.cpp
 	g++ -c cpp/packet/name_util.cpp $(ALL_OPT)
 
-response_maker.o : cpp/packet/response_maker.hpp
+response_maker : cpp/packet/response_maker.hpp
 	g++ -c cpp/packet/response_maker.hpp $(ALL_OPT)
 
-edns.o : cpp/packet/edns.cpp
+edns : cpp/packet/edns.cpp
 	g++ -c cpp/packet/edns.cpp $(CPP_OPT) $(TINS_FLAG) 
 
-dns_util.o : cpp/packet/dns_process_util.cpp
+dns_util : cpp/packet/dns_process_util.cpp
 	g++ -c cpp/packet/dns_process_util.cpp $(CPP_OPT) $(TINS_FLAG) 
 
 server: $(TARGET_SERVER) ;

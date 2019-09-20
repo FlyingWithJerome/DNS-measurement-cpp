@@ -23,11 +23,7 @@ UDPListener::UDPListener(
 , number_of_recv_responses_(
     LRU_SIZE
 )
-, ddos_hold_on_(
-    ddos_hold_on
-)
 {
-    std::cout << "[UDP Listener] ddos_hold_on_ address: " << &ddos_hold_on_ << "\n";
     boost::asio::socket_base::receive_buffer_size option(rcv_buf_size);
     main_socket_.set_option(option);
 
@@ -124,13 +120,7 @@ void UDPListener::handle_receive(
             {
                 UDP_SCANNER_REPEAT_RESPONSE_LOG(sender, name_type_pair.first)
 
-                // ddos_hold_on_ = number_of_entries >= MAX_ALLOW_NUM_PACK_RECV;
                 goto End;
-            }
-            if (ddos_hold_on_)
-            {
-                // boost::system::error_code ec;
-                // ddos_hold_on_ = main_socket_.available(ec) < 1000;
             }
         }
     }
@@ -160,24 +150,28 @@ void UDPListener::handle_receive(
             
             if(query_property.jumbo_type == NameUtilities::JumboType::no_jumbo) // not a jumbo query, will start a jumbo query
             {                
-                const std::string question_name_jumbo  = std::string("jumbo1-") + query_property.name;
-                const std::string question_name_ac1an0 = std::string("ac1an0-") + question_name_jumbo;
-                const std::string question_name_broken = std::string("jumbo2-") + query_property.name;
-                const std::string question_for_tcp     = std::string("t-") + query_property.name;
+                const std::string question_name_jumbo_no_answer     = std::string("jumbo1-") + query_property.name;
+                const std::string question_name_jumbo_one_answer    = std::string("jumbo2-") + query_property.name;
+                // const std::string question_name_ac1an0 = std::string("ac1an0-") + question_name_jumbo_one_answer;
+                const std::string question_name_jumbo_broken_answer = std::string("jumbo3-") + query_property.name;
+                const std::string question_name_for_tcp             = std::string("t-") + query_property.name;
 
-                SEND_OUT_PACKET(jumbo_a,   question_name_jumbo,  QueryType::A, sender)
-                SEND_OUT_PACKET(ac1an0_a,  question_name_ac1an0, QueryType::A, sender)
-                SEND_OUT_PACKET(jumbo_b_a, question_name_broken, QueryType::A, sender)
+                SEND_OUT_PACKET(jumbo_n_a,   question_name_jumbo_no_answer,   QueryType::A, sender)
+                SEND_OUT_PACKET(jumbo_o_a,   question_name_jumbo_one_answer,  QueryType::A, sender)
+                // SEND_OUT_PACKET(ac1an0_a,  question_name_ac1an0, QueryType::A, sender)
+                SEND_OUT_PACKET(jumbo_b_a, question_name_jumbo_broken_answer, QueryType::A, sender)
 
-                SEND_OUT_PACKET(jumbo_mx,   question_name_jumbo,  QueryType::MX, sender)
-                SEND_OUT_PACKET(ac1an0_mx,  question_name_ac1an0, QueryType::MX, sender)
-                SEND_OUT_PACKET(jumbo_b_mx, question_name_broken, QueryType::MX, sender)
+                SEND_OUT_PACKET(jumbo_n_mx,   question_name_jumbo_no_answer,   QueryType::MX, sender)
+                SEND_OUT_PACKET(jumbo_o_mx,   question_name_jumbo_one_answer,  QueryType::MX, sender)
+                // SEND_OUT_PACKET(ac1an0_mx,  question_name_ac1an0, QueryType::MX, sender)
+                SEND_OUT_PACKET(jumbo_b_mx, question_name_jumbo_broken_answer, QueryType::MX, sender)
 
-                SEND_OUT_PACKET(jumbo_txt,   question_name_jumbo,  QueryType::TXT, sender)
-                SEND_OUT_PACKET(ac1an0_txt,  question_name_ac1an0, QueryType::TXT, sender)
-                SEND_OUT_PACKET(jumbo_b_txt, question_name_broken, QueryType::TXT, sender)
+                SEND_OUT_PACKET(jumbo_n_txt,   question_name_jumbo_no_answer,   QueryType::TXT, sender)
+                SEND_OUT_PACKET(jumbo_o_txt,   question_name_jumbo_one_answer,  QueryType::TXT, sender)
+                // SEND_OUT_PACKET(ac1an0_txt,  question_name_ac1an0, QueryType::TXT, sender)
+                SEND_OUT_PACKET(jumbo_b_txt, question_name_jumbo_broken_answer, QueryType::TXT, sender)
 
-                SEND_TO_TCP_SCANNER(question_for_tcp, QueryType::A)
+                SEND_TO_TCP_SCANNER(question_name_for_tcp, QueryType::A)
                 UDP_SCANNER_NORMAL_LOG(sender, query_property.question_id, "ok")
 
             }// not a jumbo query, will start a jumbo query END
