@@ -10,6 +10,10 @@
 #include <functional>
 #include <tins/dns.h>
 #include <ctype.h>
+#include <string>
+#include <vector>
+
+#include <tins/dns.h>
 
 #include "name_util.hpp"
 #include "../constants.hpp"
@@ -57,13 +61,15 @@ typedef struct{
     
 } packet_configuration;
 
-typedef void (*handler)(
-    Tins::DNS&, 
-    const std::vector<std::string>&,
-    const Tins::DNS::QueryClass&,
-    const Tins::DNS::QueryType&,
-    const std::string&
-);
+typedef std::function<
+    void(
+        Tins::DNS&, 
+        const std::vector<std::string>&,
+        const Tins::DNS::QueryClass&,
+        const Tins::DNS::QueryType&,
+        const std::string&
+    )
+> handler;
 
 void udp_a_handler(
     Tins::DNS&, 
@@ -140,6 +146,33 @@ const std::map<std::pair<ProtocolTypes, QueryType>, handler> query_handler = {
     {std::make_pair(ProtocolTypes::PROTO_TCP, QueryType::TXT), tcp_txt_handler}
 };
 
+template <typename input_iter>
+static std::string form_txt_string(
+    input_iter start,
+    input_iter end
+)
+{
+    const int max_size = 255;
+
+    std::string result;
+    std::string txt_segment;
+
+    while ( start != end )
+    {
+        while ( txt_segment.size() < max_size and start != end )
+        {   
+            txt_segment += (*start++);
+        }
+
+        txt_segment.insert(0, 1, (char)txt_segment.size());
+        result.append(txt_segment);
+        txt_segment.clear();
+    }
+
+    std::replace(result.begin(), result.end(), '\n', ' ');
+    return result;
+};
+
 static constexpr char short_msg[] = 
 "an Internet measurement on DNS in IPv4 space, "
 "carried out by Jerome Mao and Professor Michael Rabinovich "
@@ -195,19 +228,6 @@ class QueryFactory
 
 };
 
-#define APPEND_ANSWER(answer_set, num) for (int answer_index = 0; answer_index < num; answer_index++) \
-{ \
-    response.add_answer( \
-        Tins::DNS::resource( \
-            query_property.name, \
-            answer_set##_answers[answer_index], \
-            query_type, \
-            query_class, \
-            DNS_RESOURCE_TTL \
-        ) \
-    ); \
-}
-
 class ResponseFactory
 {
     public:
@@ -222,33 +242,6 @@ class ResponseFactory
 
         static constexpr size_t udp_header_size    = 8;
         static constexpr size_t tcp_dns_size_shift = 2;
-
-        template <typename input_iter>
-        static std::string form_txt_string(
-            input_iter start,
-            input_iter end
-        )
-        {
-            const int max_size = 255;
-
-            std::string result;
-            std::string txt_segment;
-
-            while ( start != end )
-            {
-                while ( txt_segment.size() < max_size and start != end )
-                {   
-                    txt_segment += (*start++);
-                }
-
-                txt_segment.insert(0, 1, (char)txt_segment.size());
-                result.append(txt_segment);
-                txt_segment.clear();
-            }
-
-            std::replace(result.begin(), result.end(), '\n', ' ');
-            return result;
-        }
 
     private:
         void make_udp_response(

@@ -7,7 +7,7 @@ BOOST_LOG = -DBOOST_LOG_DYN_LINK -lboost_system -lboost_log -lboost_log_setup -l
 BOOST_FLAG = -lboost_thread
 TINS_FLAG =  -ltins
 POSIX_FLAG = -lpthread -lrt
-CPP_OPT = -std=c++11 -g
+CPP_OPT = -std=c++11 -g -lstdc++
 OPTIMIZATION = -O3
 GTEST_FLAG = -lgtest_main  -lgtest
 
@@ -17,10 +17,12 @@ ALL_OPT = $(CPP_OPT) $(OPTIMIZATION) $(BOOST_FLAG) $(BOOST_LOG) $(TINS_FLAG) $(P
 TARGET_SERVER = server_main
 TARGET_SCANNER = scanner_main
 
-$(TARGET_SERVER): server_main log_service constants name_util response_maker tcp_server udp_server edns packet_factory dns_util
+.PHONY: clean
+
+server: server_main log_service constants name_util tcp_server udp_server edns packet_factory dns_util
 	g++ *.o $(ALL_OPT) -o $(TARGET_SERVER) && mv *.o build
 
-server_main : cpp/server/server_main.cpp
+server_main : cpp/server/server_main.cpp 
 	g++ -c cpp/server/server_main.cpp $(ALL_OPT)
 
 tcp_server : cpp/server/tcp_server.cpp cpp/server/tcp_connection.cpp 
@@ -38,16 +40,11 @@ constants : cpp/constants.hpp
 name_util : cpp/packet/name_util.cpp
 	g++ -c cpp/packet/name_util.cpp $(ALL_OPT)
 
-response_maker : cpp/packet/response_maker.hpp
-	g++ -c cpp/packet/response_maker.hpp $(ALL_OPT)
-
 edns : cpp/packet/edns.cpp
 	g++ -c cpp/packet/edns.cpp $(CPP_OPT) $(TINS_FLAG) 
 
 dns_util : cpp/packet/dns_process_util.cpp
 	g++ -c cpp/packet/dns_process_util.cpp $(CPP_OPT) $(TINS_FLAG) 
-
-server: $(TARGET_SERVER) ;
 
 udp_scanner_sender.o : cpp/scanner/udp_scanner_sender.cpp
 	g++ -c cpp/scanner/udp_scanner_sender.cpp $(ALL_OPT)
@@ -64,8 +61,8 @@ tcp_scanner.o : cpp/scanner/tcp_scanner.cpp
 monitor.o : cpp/scanner/monitor.cpp
 	g++ -c cpp/scanner/monitor.cpp $(ALL_OPT)
 
-packet_factory.o: cpp/packet/packet_factory.cpp
-	g++ -c cpp/packet/packet_factory.cpp $(CPP_OPT) $(TINS_FLAG)
+packet_factory: cpp/packet/packet_factory.cpp
+	g++ -c cpp/packet/packet_factory.cpp $(ALL_OPT)
 
 udp_scanner_main: udp_scanner_sender.o udp_scanner_listener.o udp_scanner.o name_util.o log_service.o tcp_scanner.o monitor.o packet_factory.o dns_util.o
 	g++ udp_scanner_sender.o \

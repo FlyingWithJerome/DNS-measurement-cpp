@@ -305,7 +305,7 @@ ResponseFactory::ResponseFactory()
 
     std::ifstream file("cpp/server/some_text.txt");
 
-    txt_answer = ResponseFactory::form_txt_string(
+    txt_answer = form_txt_string(
         std::istreambuf_iterator<char>(file),
         std::istreambuf_iterator<char>()
     );
